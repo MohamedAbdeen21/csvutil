@@ -9,15 +9,6 @@ import (
 
 var possibleModes = []string{"lines", "bytes", "group"}
 
-func existsIn(value string, list []string) bool {
-	for _, val := range list {
-		if val == value {
-			return true
-		}
-	}
-	return false
-}
-
 var mode string
 var group string
 var filters map[string]string
@@ -32,7 +23,7 @@ var countCmd = &cobra.Command{
 			panic("Threads can't be less than 1")
 		}
 
-		if !existsIn(mode, possibleModes) {
+		if !csvutil.ExistsIn(mode, possibleModes) {
 			panic("Mode must be one of the possible values")
 		}
 
@@ -50,7 +41,6 @@ var countCmd = &cobra.Command{
 			println("using Stdin")
 			count = csvutil.Count("", 1, mode, filters, group, delimiter)
 		} else {
-			// pass the name not the fd because we need to os.Stat the file
 			count = csvutil.Count(args[0], threads, mode, filters, group, delimiter)
 		}
 

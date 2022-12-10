@@ -2,12 +2,24 @@ package csvutil
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
 	"strings"
 )
 
-func mapHeaders(fd *os.File) map[string]int {
+func ExistsIn(value string, list []string) bool {
+	for _, val := range list {
+		if val == value {
+			return true
+		}
+	}
+	return false
+}
+
+func mapHeaders(filename string) map[string]int {
+	fd, _ := os.Open(filename)
+	defer fd.Close()
 	mapped_headers := make(map[string]int)
 	reader := bufio.NewReader(fd)
 	headers_line, _ := reader.ReadString('\n')
@@ -19,24 +31,27 @@ func mapHeaders(fd *os.File) map[string]int {
 }
 
 func adjustLimit(filename string, offset int64, chuck_size int64) (limit int64) {
-	file, err := os.Open(filename)
+	fd, err := os.Open(filename)
+	if err != nil {
+		panic(fmt.Sprintf("can't open file: %s", filename))
+	}
+	defer fd.Close()
 	if err != nil {
 		panic("No such file!")
 	}
 
-	file.Seek(offset+chuck_size, io.SeekStart)
-	reader := bufio.NewReader(file)
+	fd.Seek(offset+chuck_size, io.SeekStart)
+	reader := bufio.NewReader(fd)
 	line, _ := reader.ReadBytes('\n')
 	limit = chuck_size + int64(len(line))
 	return limit
 }
 
-func openAndStatFile(filename string) (int64, *os.File) {
+func statFile(filename string) int64 {
 	if filename == "" {
-		return 0, os.Stdin
+		return 0
 	} else {
-		file, _ := os.Open(filename)
 		stat, _ := os.Stat(filename)
-		return stat.Size(), file
+		return stat.Size()
 	}
 }
