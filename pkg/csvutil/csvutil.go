@@ -17,8 +17,8 @@ func setupMappers(filename string, thread_count int, delimiter string) (mappers 
 	var chuck_size int64 = file_size / threads
 	var limit int64 = 0
 
-	if filename == "" {
-		mappers = append(mappers, newMapper(0, 0, int64(math.MaxInt64), os.Stdin.Name(), delimiter))
+	if filename == os.Stdin.Name() {
+		mappers = append(mappers, newMapper(0, offset, math.MaxInt64, filename, delimiter))
 	} else {
 		for i := int64(0); i < threads; i++ {
 			limit = adjustLimit(filename, offset, chuck_size)
@@ -26,7 +26,24 @@ func setupMappers(filename string, thread_count int, delimiter string) (mappers 
 			offset += limit
 		}
 	}
+
 	return mappers
+}
+
+func setupFilters(filename string, mappers []*Mapper, filters map[string]string) {
+	if len(filters) != 0 {
+		mapped_headers := mapHeaders(filename)
+		mapper_headers := make(map[int]string)
+		for key, value := range filters {
+			if _, ok := mapped_headers[key]; !ok {
+				panic(fmt.Sprintf("Column %s doesn't exist", key))
+			}
+			mapper_headers[mapped_headers[key]] = value
+		}
+		for _, mapper := range mappers {
+			mapper.setColumns(mapper_headers)
+		}
+	}
 }
 
 func Count(filename string, instances int, mode string, filters map[string]string, group string, delimiter string) map[string]int64 {
@@ -43,19 +60,7 @@ func Count(filename string, instances int, mode string, filters map[string]strin
 		}
 	}
 
-	if len(filters) != 0 {
-		mapped_headers := mapHeaders(filename)
-		mapper_headers := make(map[int]string)
-		for key, value := range filters {
-			if _, ok := mapped_headers[key]; !ok {
-				panic(fmt.Sprintf("Column %s doesn't exist", key))
-			}
-			mapper_headers[mapped_headers[key]] = value
-		}
-		for _, mapper := range mappers {
-			mapper.setColumns(mapper_headers)
-		}
-	}
+	setupFilters(filename, mappers, filters)
 
 	// run mappers
 	for _, mapper := range mappers {
@@ -67,7 +72,7 @@ func Count(filename string, instances int, mode string, filters map[string]strin
 	return newReducer().reduceCount(mappers[:], mode)
 }
 
-func Stat(filename string, instances int, delimiter, column string, stats []string) map[string]float64 {
+func Stat(filename string, column string, instances int, stats []string, delimiter string) map[string]float64 {
 	mappers := setupMappers(filename, instances, delimiter)
 	channel := make(chan string)
 
@@ -80,16 +85,52 @@ func Stat(filename string, instances int, delimiter, column string, stats []stri
 	for col_name, col_index := range mapped_headers {
 		if col_name == column {
 			mapper_headers[col_index] = "0"
-			for _, mapper := range mappers {
-				mapper.setColumns(mapper_headers)
+		}
+	}
+
+	for _, mapper := range mappers {
+		mapper.setColumns(mapper_headers)
+		wg.Add(1)
+		go mapper.runStat()
+	}
+
+	return newStatReducer(stats).reduceStat(channel)
+}
+
+func Columns(filename string, columns []string, filters map[string]string, instances int, delimiter string) {
+	mappers := setupMappers(filename, instances, delimiter)
+	channel := make(chan string)
+
+	for _, mapper := range mappers {
+		mapper.setChannel(channel)
+	}
+
+	setupFilters(filename, mappers, filters)
+
+	var ordering []int
+	headers := mapHeaders(filename)
+	if len(columns) == 0 {
+		// all columns in the correct order
+		ordering = make([]int, len(headers))
+		for _, index := range headers {
+			ordering[index] = index
+		}
+	} else {
+		ordering = make([]int, len(columns))
+		for name, index := range headers {
+			for pos, col_name := range columns {
+				if name == col_name {
+					ordering[pos] = index
+				}
 			}
 		}
 	}
 
 	for _, mapper := range mappers {
+		mapper.setOrdering(ordering)
 		wg.Add(1)
-		go mapper.runStat()
+		go mapper.runColumns()
 	}
 
-	return newReducer(stats).reduceStat(channel)
+	newReducer().reduceColumns(channel)
 }

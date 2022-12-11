@@ -12,14 +12,19 @@ type Reducer struct {
 	stats    map[string]float64
 }
 
-func newReducer(params ...[]string) *Reducer {
-	red := &Reducer{
+func newStatReducer(required_stats []string) *Reducer {
+	reducer := &Reducer{
 		stats:    make(map[string]float64),
-		required: params[0],
+		required: required_stats,
 	}
-	red.stats["min"] = math.MaxInt64
-	red.stats["max"] = math.MinInt64
-	return red
+	reducer.stats["min"] = math.MaxInt64
+	reducer.stats["max"] = math.MinInt64
+	reducer.stats["nulls"] = 0
+	return reducer
+}
+
+func newReducer() *Reducer {
+	return &Reducer{}
 }
 
 func (reducer *Reducer) reduceCount(mappers []*Mapper, mode string) map[string]int64 {
@@ -51,7 +56,11 @@ func (reducer *Reducer) reduceStat(channel chan string) map[string]float64 {
 		select {
 		case data := <-channel:
 			value, err := strconv.ParseFloat(data, 64)
-			if err != nil {
+			if data == "" {
+				reducer.stats["nulls"]++
+			}
+
+			if err != nil && data != "" {
 				panic(fmt.Sprintf("value provided not numeric: %s", data))
 			}
 
@@ -62,7 +71,7 @@ func (reducer *Reducer) reduceStat(channel chan string) map[string]float64 {
 				reducer.stats["min"] = value
 			}
 			reducer.stats["sum"] += value
-			reducer.stats["count"] += 1
+			reducer.stats["count"]++
 
 			// avoid calculating if not necessary to save space
 			if ExistsIn("std_dev", reducer.required) {
@@ -81,6 +90,23 @@ func (reducer *Reducer) reduceStat(channel chan string) map[string]float64 {
 				reducer.stats["std_dev"] = math.Sqrt(variance / reducer.stats["sum"])
 			}
 			return reducer.stats
+		}
+	}
+}
+
+func (reducer *Reducer) reduceColumns(channel chan string) {
+	waitCh := make(chan int)
+	go func() {
+		wg.Wait()
+		close(waitCh)
+	}()
+
+	for {
+		select {
+		case <-waitCh:
+			return
+		case line := <-channel:
+			fmt.Println(line)
 		}
 	}
 }
