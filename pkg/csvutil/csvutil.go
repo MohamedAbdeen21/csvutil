@@ -31,18 +31,16 @@ func setupMappers(filename string, thread_count int, delimiter string) (mappers 
 }
 
 func setupFilters(filename string, mappers []*Mapper, filters map[string]string) {
-	if len(filters) != 0 {
-		mapped_headers := mapHeaders(filename)
-		mapper_headers := make(map[int]string)
-		for key, value := range filters {
-			if _, ok := mapped_headers[key]; !ok {
-				panic(fmt.Sprintf("Column %s doesn't exist", key))
-			}
-			mapper_headers[mapped_headers[key]] = value
+	mapped_headers := mapHeaders(filename)
+	mapper_headers := make(map[int]string)
+	for key, value := range filters {
+		if _, ok := mapped_headers[key]; !ok {
+			panic(fmt.Sprintf("Column %s doesn't exist", key))
 		}
-		for _, mapper := range mappers {
-			mapper.setColumns(mapper_headers)
-		}
+		mapper_headers[mapped_headers[key]] = value
+	}
+	for _, mapper := range mappers {
+		mapper.setColumns(mapper_headers)
 	}
 }
 
@@ -52,6 +50,7 @@ func Count(filename string, instances int, mode string, filters map[string]strin
 
 	for _, mapper := range mappers {
 		mapper.setMode(mode)
+		mapper.setSkipHeaders(true)
 	}
 
 	if group != "" {
@@ -60,7 +59,9 @@ func Count(filename string, instances int, mode string, filters map[string]strin
 		}
 	}
 
-	setupFilters(filename, mappers, filters)
+	if len(filters) != 0 {
+		setupFilters(filename, mappers, filters)
+	}
 
 	// run mappers
 	for _, mapper := range mappers {
@@ -78,6 +79,7 @@ func Stat(filename string, column string, instances int, stats []string, delimit
 
 	for _, mapper := range mappers {
 		mapper.setChannel(channel)
+		mapper.setSkipHeaders(true)
 	}
 
 	mapped_headers := mapHeaders(filename)
@@ -97,7 +99,7 @@ func Stat(filename string, column string, instances int, stats []string, delimit
 	return newStatReducer(stats).reduceStat(channel)
 }
 
-func Columns(filename string, columns []string, filters map[string]string, instances int, delimiter string) {
+func Columns(filename string, columns []string, filters map[string]string, instances int, limit int, delimiter string, output *os.File) {
 	mappers := setupMappers(filename, instances, delimiter)
 	channel := make(chan string)
 
@@ -105,7 +107,15 @@ func Columns(filename string, columns []string, filters map[string]string, insta
 		mapper.setChannel(channel)
 	}
 
-	setupFilters(filename, mappers, filters)
+	if output != os.Stdout {
+		for _, mapper := range mappers {
+			mapper.setSkipHeaders(true)
+		}
+	}
+
+	if len(filters) != 0 {
+		setupFilters(filename, mappers, filters)
+	}
 
 	var ordering []int
 	headers := mapHeaders(filename)
@@ -132,5 +142,5 @@ func Columns(filename string, columns []string, filters map[string]string, insta
 		go mapper.runColumns()
 	}
 
-	newReducer().reduceColumns(channel)
+	newColumnsReducer(output, limit).reduceColumns(channel)
 }

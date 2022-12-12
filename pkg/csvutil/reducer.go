@@ -3,13 +3,20 @@ package csvutil
 import (
 	"fmt"
 	"math"
+	"os"
 	"strconv"
 )
 
 type Reducer struct {
-	values   []float64
+	limit int
+
+	// stat
 	required []string
+	values   []float64
 	stats    map[string]float64
+
+	// channel
+	out *os.File
 }
 
 func newStatReducer(required_stats []string) *Reducer {
@@ -25,6 +32,13 @@ func newStatReducer(required_stats []string) *Reducer {
 
 func newReducer() *Reducer {
 	return &Reducer{}
+}
+
+func newColumnsReducer(fd *os.File, limit int) *Reducer {
+	return &Reducer{
+		out:   fd,
+		limit: limit,
+	}
 }
 
 func (reducer *Reducer) reduceCount(mappers []*Mapper, mode string) map[string]int64 {
@@ -58,6 +72,8 @@ func (reducer *Reducer) reduceStat(channel chan string) map[string]float64 {
 			value, err := strconv.ParseFloat(data, 64)
 			if data == "" {
 				reducer.stats["nulls"]++
+			} else {
+				reducer.stats["count"]++
 			}
 
 			if err != nil && data != "" {
@@ -71,7 +87,6 @@ func (reducer *Reducer) reduceStat(channel chan string) map[string]float64 {
 				reducer.stats["min"] = value
 			}
 			reducer.stats["sum"] += value
-			reducer.stats["count"]++
 
 			// avoid calculating if not necessary to save space
 			if ExistsIn("std_dev", reducer.required) {
@@ -106,7 +121,12 @@ func (reducer *Reducer) reduceColumns(channel chan string) {
 		case <-waitCh:
 			return
 		case line := <-channel:
-			fmt.Println(line)
+			if reducer.limit > 0 {
+				reducer.out.WriteString(line + "\n")
+				reducer.limit--
+			} else {
+				return
+			}
 		}
 	}
 }

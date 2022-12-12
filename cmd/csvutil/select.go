@@ -10,6 +10,7 @@ import (
 
 var columns_string string
 var select_filters map[string]string
+var limit int
 
 var selectCmd = &cobra.Command{
 	Use:     "select",
@@ -25,9 +26,9 @@ var selectCmd = &cobra.Command{
 		}
 
 		if len(args) == 0 {
-			csvutil.Columns(os.Stdin.Name(), columns, select_filters, 1, delimiter)
+			csvutil.Columns(os.Stdin.Name(), columns, select_filters, limit, 1, delimiter, os.Stdout)
 		} else {
-			csvutil.Columns(args[0], columns, select_filters, threads, delimiter)
+			csvutil.Columns(args[0], columns, select_filters, threads, limit, delimiter, os.Stdout)
 		}
 	},
 }
@@ -35,5 +36,6 @@ var selectCmd = &cobra.Command{
 func init() {
 	selectCmd.Flags().StringVarP(&columns_string, "columns", "c", "", "Columns to output")
 	selectCmd.Flags().StringToStringVarP(&select_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=VALUE")
+	selectCmd.Flags().IntVarP(&limit, "limit", "n", -1, "Limit number of printed rows")
 	rootCmd.AddCommand(selectCmd)
 }

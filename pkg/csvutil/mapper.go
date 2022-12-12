@@ -27,7 +27,8 @@ type Mapper struct {
 	group_count map[string]int64
 
 	// select columns
-	ordering []int
+	ordering    []int
+	skipHeaders bool
 }
 
 func newMapper(id int64, offset int64, limit int64, filename string, delimiter string) *Mapper {
@@ -56,6 +57,10 @@ func (mapper *Mapper) setChannel(channel chan string) {
 
 func (mapper *Mapper) setOrdering(ordering []int) {
 	mapper.ordering = ordering
+}
+
+func (mapper *Mapper) setSkipHeaders(val bool) {
+	mapper.skipHeaders = val
 }
 
 func (mapper *Mapper) _skipHeader(reader *bufio.Reader) {
@@ -116,7 +121,9 @@ func (mapper *Mapper) _countGroups(line string) {
 		if value == "" {
 			value = "NULL"
 		}
-		mapper.group_count[value]++
+		if mapper._filter(line) {
+			mapper.group_count[value]++
+		}
 	}
 }
 
@@ -169,7 +176,7 @@ func (mapper *Mapper) runCount() {
 	defer wg.Done()
 	reader := bufio.NewReader(mapper.file)
 
-	if mapper.mode == "group" {
+	if mapper.skipHeaders {
 		mapper._skipHeader(reader)
 	}
 
@@ -194,7 +201,9 @@ func (mapper *Mapper) runStat() {
 	defer wg.Done()
 	reader := bufio.NewReader(mapper.file)
 
-	mapper._skipHeader(reader)
+	if mapper.skipHeaders {
+		mapper._skipHeader(reader)
+	}
 
 	for {
 		line, ok, eof := mapper._readLine(reader)
@@ -217,6 +226,10 @@ func (mapper *Mapper) runColumns() {
 	defer mapper.file.Close()
 	defer wg.Done()
 	reader := bufio.NewReader(mapper.file)
+
+	if mapper.skipHeaders {
+		mapper._skipHeader(reader)
+	}
 
 	for {
 		line, ok, eof := mapper._readLine(reader)

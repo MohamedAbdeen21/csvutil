@@ -1,7 +1,6 @@
 package csvutil
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -19,14 +18,20 @@ var statCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		var result = make(map[string]float64)
 		stats := strings.Split(stats_string, ",")
+
 		if len(args) == 1 {
 			result = csvutil.Stat(os.Stdin.Name(), args[0], 1, stats, delimiter)
 		} else {
 			result = csvutil.Stat(args[0], args[1], threads, stats, delimiter)
 		}
+
 		for key, value := range result {
 			if csvutil.ExistsIn(key, stats) {
-				fmt.Printf("%-8s: %.2f\n", key, value)
+				if csvutil.ExistsIn(key, intStats) {
+					cmd.Printf("%-8s: %0.f\n", key, value)
+				} else {
+					cmd.Printf("%-8s: %.2f\n", key, value)
+				}
 			}
 		}
 	},

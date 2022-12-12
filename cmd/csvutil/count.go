@@ -14,7 +14,7 @@ var count_filters map[string]string
 
 var countCmd = &cobra.Command{
 	Use:   "count",
-	Short: "Count the number of lines",
+	Short: "Count the number of lines, bytes or frequency of column values",
 	Args:  cobra.RangeArgs(0, 1),
 	Run: func(cmd *cobra.Command, args []string) {
 
@@ -35,7 +35,7 @@ var countCmd = &cobra.Command{
 		}
 
 		for key, value := range count {
-			fmt.Printf("%s: %d\n", key, value)
+			cmd.Printf("%s: %d\n", key, value)
 		}
 	},
 }
@@ -49,7 +49,6 @@ func init() {
 	countCmd.Flags().StringToStringVarP(&count_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=VALUE")
 
 	countCmd.MarkFlagsMutuallyExclusive("group", "mode")
-	countCmd.MarkFlagsMutuallyExclusive("group", "filter")
 
 	rootCmd.AddCommand(countCmd)
 }
