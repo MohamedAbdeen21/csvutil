@@ -17,12 +17,18 @@ var statCmd = &cobra.Command{
 	Example: "csvutil stat [flags] [file_name] [column_name]",
 	Run: func(cmd *cobra.Command, args []string) {
 		var result = make(map[string]float64)
+		var err error
 		stats := strings.Split(stats_string, ",")
 
 		if len(args) == 1 {
-			result = csvutil.Stat(os.Stdin.Name(), args[0], 1, stats, delimiter)
+			result, err = csvutil.Stat(os.Stdin.Name(), args[0], 1, stats, delimiter)
 		} else {
-			result = csvutil.Stat(args[0], args[1], threads, stats, delimiter)
+			result, err = csvutil.Stat(args[0], args[1], threads, stats, delimiter)
+		}
+
+		if err != nil {
+			cmd.PrintErrln(err)
+			os.Exit(1)
 		}
 
 		for key, value := range result {

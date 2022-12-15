@@ -8,19 +8,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var mode string
-var group string
-var count_filters map[string]string
-
-var countCmd = &cobra.Command{
+var plotCountCmd = &cobra.Command{
 	Use:   "count",
-	Short: "Count the number of lines, bytes or frequency of column values",
+	Short: "Count the number of lines, bytes or frequency of column",
 	Args:  cobra.RangeArgs(0, 1),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		if !csvutil.ExistsIn(mode, countPossibleModes) {
-			cmd.PrintErrln("Mode must be one of the possible values")
-			return
+			panic("Mode must be one of the possible values")
 		}
 
 		if group != "" {
@@ -42,20 +37,22 @@ var countCmd = &cobra.Command{
 		}
 
 		for key, value := range count {
+			if key == "NULL" {
+				continue
+			}
 			cmd.Printf("%s: %d\n", key, value)
 		}
 	},
 }
 
 func init() {
-
 	possibleModesString := csvutil.ConstructStringFromList(countPossibleModes)
 
-	countCmd.Flags().StringVarP(&mode, "mode", "m", "lines", fmt.Sprintf("What to count\n%s", possibleModesString))
-	countCmd.Flags().StringVarP(&group, "group", "g", "", "Group by column and return count")
-	countCmd.Flags().StringToStringVarP(&count_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=VALUE")
+	plotCountCmd.Flags().StringVarP(&mode, "mode", "m", "lines", fmt.Sprintf("What to count\n%s", possibleModesString))
+	plotCountCmd.Flags().StringVarP(&group, "group", "g", "", "Group by column and return count")
+	plotCountCmd.Flags().StringToStringVarP(&count_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=VALUE")
 
-	countCmd.MarkFlagsMutuallyExclusive("group", "mode")
+	plotCountCmd.MarkFlagsMutuallyExclusive("group", "mode")
 
-	rootCmd.AddCommand(countCmd)
+	plotCmd.AddCommand(plotCountCmd)
 }

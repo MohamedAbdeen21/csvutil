@@ -59,7 +59,7 @@ func (reducer *Reducer) reduceCount(mappers []*Mapper, mode string) map[string]i
 	return result
 }
 
-func (reducer *Reducer) reduceStat(channel chan string) map[string]float64 {
+func (reducer *Reducer) reduceStat(channel chan string) (map[string]float64, error) {
 	waitCh := make(chan int)
 	go func() {
 		wg.Wait()
@@ -77,7 +77,7 @@ func (reducer *Reducer) reduceStat(channel chan string) map[string]float64 {
 			}
 
 			if err != nil && data != "" {
-				panic(fmt.Sprintf("value provided not numeric: %s", data))
+				return nil, fmt.Errorf("value provided is not numeric: %s", data)
 			}
 
 			if value > reducer.stats["max"] {
@@ -104,7 +104,7 @@ func (reducer *Reducer) reduceStat(channel chan string) map[string]float64 {
 				}
 				reducer.stats["std_dev"] = math.Sqrt(variance / reducer.stats["sum"])
 			}
-			return reducer.stats
+			return reducer.stats, nil
 		}
 	}
 }
@@ -124,6 +124,8 @@ func (reducer *Reducer) reduceColumns(channel chan string) {
 			if reducer.limit > 0 {
 				reducer.out.WriteString(line + "\n")
 				reducer.limit--
+			} else if reducer.limit == -1 {
+				reducer.out.WriteString(line + "\n")
 			} else {
 				return
 			}
