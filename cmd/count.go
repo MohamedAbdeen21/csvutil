@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/MohamedAbdeen21/csvutil/pkg/csvutil"
+	csvutil "github.com/MohamedAbdeen21/csvutil/pkg"
 	"github.com/spf13/cobra"
 )
 
@@ -31,9 +31,24 @@ var countCmd = &cobra.Command{
 		var err error
 		// use stdin
 		if len(args) == 0 {
-			count, err = csvutil.Count(os.Stdin.Name(), 1, mode, count_filters, group, delimiter)
+			cmd.Print(">")
+			count, err = csvutil.Count(&csvutil.Options{
+				Filename:  os.Stdin.Name(),
+				Threads:   1,
+				Mode:      mode,
+				Filters:   count_filters,
+				Group:     group,
+				Delimiter: delimiter,
+			})
 		} else {
-			count, err = csvutil.Count(args[0], threads, mode, count_filters, group, delimiter)
+			count, err = csvutil.Count(&csvutil.Options{
+				Filename:  args[0],
+				Threads:   threads,
+				Mode:      mode,
+				Filters:   count_filters,
+				Group:     group,
+				Delimiter: delimiter,
+			})
 		}
 
 		if err != nil {
@@ -57,5 +72,5 @@ func init() {
 
 	countCmd.MarkFlagsMutuallyExclusive("group", "mode")
 
-	rootCmd.AddCommand(countCmd)
+	RootCmd.AddCommand(countCmd)
 }

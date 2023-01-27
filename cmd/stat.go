@@ -4,11 +4,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/MohamedAbdeen21/csvutil/pkg/csvutil"
+	csvutil "github.com/MohamedAbdeen21/csvutil/pkg"
 	"github.com/spf13/cobra"
 )
 
 var stats_string string
+
 var statCmd = &cobra.Command{
 	Use:     "stat",
 	Short:   "Print statistics about a column",
@@ -21,9 +22,22 @@ var statCmd = &cobra.Command{
 		stats := strings.Split(stats_string, ",")
 
 		if len(args) == 1 {
-			result, err = csvutil.Stat(os.Stdin.Name(), args[0], 1, stats, delimiter)
+			cmd.Print(">")
+			result, err = csvutil.Stat(&csvutil.Options{
+				Filename:  os.Stdin.Name(),
+				Columns:   []string{args[0]},
+				Threads:   1,
+				Stats:     stats,
+				Delimiter: delimiter,
+			})
 		} else {
-			result, err = csvutil.Stat(args[0], args[1], threads, stats, delimiter)
+			result, err = csvutil.Stat(&csvutil.Options{
+				Filename:  args[0],
+				Columns:   []string{args[1]},
+				Threads:   threads,
+				Stats:     stats,
+				Delimiter: delimiter,
+			})
 		}
 
 		if err != nil {
@@ -45,5 +59,5 @@ var statCmd = &cobra.Command{
 
 func init() {
 	statCmd.Flags().StringVarP(&stats_string, "stat", "s", strings.Join(statPossibleStats, ","), "The stat to display, default all")
-	rootCmd.AddCommand(statCmd)
+	RootCmd.AddCommand(statCmd)
 }

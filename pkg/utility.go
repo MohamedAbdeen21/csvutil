@@ -12,7 +12,6 @@ func ConstructStringFromList(list []string) string {
 	var result string = "{"
 	for _, value := range list {
 		result += value
-		// if not the last value
 		if value != list[len(list)-1] {
 			result += ","
 		}

@@ -10,6 +10,20 @@ import (
 
 var wg sync.WaitGroup
 
+type Options struct {
+	Filename    string
+	Threads     int
+	Mode        string
+	Filters     map[string]string
+	Group       string
+	Delimiter   string
+	Columns     []string
+	KeepHeaders bool
+	Limit       int
+	Output      *os.File
+	Stats       []string
+}
+
 func setupMappers(filename string, thread_count int, delimiter string) (mappers []*Mapper) {
 	threads := int64(thread_count)
 	file_size := statFile(filename)
@@ -46,37 +60,36 @@ func setupFilters(filename string, mappers []*Mapper, filters map[string]string)
 	return nil
 }
 
-func Count(filename string, instances int, mode string, filters map[string]string, group string, delimiter string) (map[string]int64, error) {
-
-	mappers := setupMappers(filename, instances, delimiter)
-
-	for _, mapper := range mappers {
-		mapper.setMode(mode)
-		mapper.setSkipHeaders(true)
-	}
-
-	if group != "" {
+func Count(option *Options) (map[string]int64, error) {
+	mapped_headers := mapHeaders(option.Filename)
+	if option.Group != "" {
 		valid := false
-		group = strings.TrimSpace(group)
-		mapped_headers := mapHeaders(filename)
+		option.Group = strings.TrimSpace(option.Group)
 		for key := range mapped_headers {
-			if key == group {
+			if key == option.Group {
 				valid = true
 				break
 			}
 		}
 
 		if !valid {
-			return nil, fmt.Errorf("group: column %s doesn't exist", group)
+			return nil, fmt.Errorf("group: column %s doesn't exist", option.Group)
 		}
 
-		for _, mapper := range mappers {
-			mapper.group = mapped_headers[group]
+	}
+
+	mappers := setupMappers(option.Filename, option.Threads, option.Delimiter)
+
+	for _, mapper := range mappers {
+		mapper.setMode(option.Mode)
+		mapper.setSkipHeaders(true)
+		if option.Group != "" {
+			mapper.group = mapped_headers[option.Group]
 		}
 	}
 
-	if len(filters) != 0 {
-		err := setupFilters(filename, mappers, filters)
+	if len(option.Filters) != 0 {
+		err := setupFilters(option.Filename, mappers, option.Filters)
 		if err != nil {
 			return nil, err
 		}
@@ -89,11 +102,17 @@ func Count(filename string, instances int, mode string, filters map[string]strin
 	}
 
 	wg.Wait()
-	return newReducer().reduceCount(mappers[:], mode), nil
+	return newReducer().reduceCount(mappers[:], option.Mode), nil
 }
 
-func Stat(filename string, column string, instances int, stats []string, delimiter string) (map[string]float64, error) {
-	mappers := setupMappers(filename, instances, delimiter)
+func Stat(option *Options) (map[string]float64, error) {
+	mapped_headers := mapHeaders(option.Filename)
+	_, exists := mapped_headers[option.Columns[0]]
+	if !exists {
+		return map[string]float64{}, fmt.Errorf("stat: column %s doesn't exist", option.Columns[0])
+	}
+
+	mappers := setupMappers(option.Filename, option.Threads, option.Delimiter)
 	channel := make(chan string)
 
 	for _, mapper := range mappers {
@@ -101,10 +120,9 @@ func Stat(filename string, column string, instances int, stats []string, delimit
 		mapper.setSkipHeaders(true)
 	}
 
-	mapped_headers := mapHeaders(filename)
 	mapper_headers := make(map[int]string)
 	for col_name, col_index := range mapped_headers {
-		if col_name == column {
+		if col_name == option.Columns[0] {
 			mapper_headers[col_index] = "0"
 		}
 	}
@@ -115,38 +133,21 @@ func Stat(filename string, column string, instances int, stats []string, delimit
 		go mapper.runStat()
 	}
 
-	return newStatReducer(stats).reduceStat(channel)
+	return newStatReducer(option.Stats).reduceStat(channel)
 }
 
-func Columns(filename string, columns []string, filters map[string]string, instances int, keepHeaders bool, limit int, delimiter string, output *os.File) error {
-	mappers := setupMappers(filename, instances, delimiter)
-	channel := make(chan string)
-
-	for _, mapper := range mappers {
-		mapper.setChannel(channel)
-	}
-
-	if !keepHeaders || output != os.Stdout {
-		for _, mapper := range mappers {
-			mapper.setSkipHeaders(true)
-		}
-	}
-
-	if len(filters) != 0 {
-		setupFilters(filename, mappers, filters)
-	}
-
+func Columns(option *Options) error {
 	var ordering []int
-	headers := mapHeaders(filename)
-	if len(columns) == 0 {
+	headers := mapHeaders(option.Filename)
+	if len(option.Columns) == 0 {
 		// all columns in the correct order
 		ordering = make([]int, len(headers))
 		for _, index := range headers {
 			ordering[index] = index
 		}
 	} else {
-		ordering = make([]int, len(columns))
-		for pos, col_name := range columns {
+		ordering = make([]int, len(option.Columns))
+		for pos, col_name := range option.Columns {
 			index, exists := headers[col_name]
 			if exists {
 				ordering[pos] = index
@@ -156,12 +157,29 @@ func Columns(filename string, columns []string, filters map[string]string, insta
 		}
 	}
 
+	mappers := setupMappers(option.Filename, option.Threads, option.Delimiter)
+	channel := make(chan string)
+
+	for _, mapper := range mappers {
+		mapper.setChannel(channel)
+	}
+
+	if !option.KeepHeaders || option.Output != os.Stdout {
+		for _, mapper := range mappers {
+			mapper.setSkipHeaders(true)
+		}
+	}
+
+	if len(option.Filters) != 0 {
+		setupFilters(option.Filename, mappers, option.Filters)
+	}
+
 	for _, mapper := range mappers {
 		mapper.setOrdering(ordering)
 		wg.Add(1)
 		go mapper.runColumns()
 	}
 
-	newColumnsReducer(output, limit).reduceColumns(channel)
+	newColumnsReducer(option.Output, option.Limit).reduceColumns(channel)
 	return nil
 }

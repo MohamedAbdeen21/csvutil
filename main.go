@@ -1,6 +1,6 @@
 package main
 
-import "github.com/MohamedAbdeen21/csvutil/cmd/csvutil"
+import csvutil "github.com/MohamedAbdeen21/csvutil/cmd"
 
 func main() {
 	csvutil.Execute()

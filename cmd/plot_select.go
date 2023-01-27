@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/MohamedAbdeen21/csvutil/pkg/csvutil"
+	csvutil "github.com/MohamedAbdeen21/csvutil/pkg"
 	"github.com/spf13/cobra"
 )
 
@@ -22,9 +22,28 @@ var plotSelectCmd = &cobra.Command{
 		}
 
 		if len(args) == 0 {
-			csvutil.Columns(os.Stdin.Name(), columns, select_filters, limit, true, 1, delimiter, pipe_write)
+			cmd.Print(">")
+			csvutil.Columns(&csvutil.Options{
+				Filename:    os.Stdin.Name(),
+				Columns:     columns,
+				Filters:     select_filters,
+				Threads:     1,
+				KeepHeaders: true,
+				Limit:       limit,
+				Delimiter:   delimiter,
+				Output:      pipe_write,
+			})
 		} else {
-			csvutil.Columns(args[0], columns, select_filters, threads, true, limit, delimiter, pipe_write)
+			csvutil.Columns(&csvutil.Options{
+				Filename:    args[0],
+				Columns:     columns,
+				Filters:     select_filters,
+				Threads:     threads,
+				KeepHeaders: true,
+				Limit:       limit,
+				Delimiter:   delimiter,
+				Output:      pipe_write,
+			})
 		}
 	},
 }

@@ -11,7 +11,7 @@ const version = "0.0.3"
 
 var threads int
 var delimiter string
-var rootCmd = &cobra.Command{
+var RootCmd = &cobra.Command{
 	Version: version,
 	Use:     "csvutil",
 	Short:   "Quickly perform simple operations on CSV files",
@@ -31,10 +31,10 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-	rootCmd.CompletionOptions.HiddenDefaultCmd = true
-	rootCmd.PersistentFlags().IntVarP(&threads, "threads", "t", 1, "Number of concurrent workers, using Stdin overrides this flag")
-	rootCmd.PersistentFlags().StringVarP(&delimiter, "delimiter", "d", ",", "Choose delimiter")
-	if err := rootCmd.Execute(); err != nil {
+	RootCmd.CompletionOptions.HiddenDefaultCmd = true
+	RootCmd.PersistentFlags().IntVarP(&threads, "threads", "t", 1, "Number of concurrent workers, using Stdin overrides this flag")
+	RootCmd.PersistentFlags().StringVarP(&delimiter, "delimiter", "d", ",", "Choose delimiter")
+	if err := RootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "csvutil encountered an error while executing")
 		os.Exit(1)
 	}
