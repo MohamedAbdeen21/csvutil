@@ -27,29 +27,24 @@ var countCmd = &cobra.Command{
 			mode = "group"
 		}
 
-		var count map[string]int64 = make(map[string]int64)
-		var err error
+		option := csvutil.Options{
+			Mode:      mode,
+			Filters:   count_filters,
+			Group:     group,
+			Delimiter: delimiter,
+		}
+
 		// use stdin
 		if len(args) == 0 {
 			cmd.Print(">")
-			count, err = csvutil.Count(&csvutil.Options{
-				Filename:  os.Stdin.Name(),
-				Threads:   1,
-				Mode:      mode,
-				Filters:   count_filters,
-				Group:     group,
-				Delimiter: delimiter,
-			})
+			option.Filename = os.Stdin.Name()
+			option.Threads = 1
 		} else {
-			count, err = csvutil.Count(&csvutil.Options{
-				Filename:  args[0],
-				Threads:   threads,
-				Mode:      mode,
-				Filters:   count_filters,
-				Group:     group,
-				Delimiter: delimiter,
-			})
+			option.Filename = args[0]
+			option.Threads = threads
 		}
+
+		count, err := csvutil.Count(&option)
 
 		if err != nil {
 			cmd.PrintErrln(err)

@@ -21,29 +21,29 @@ var plotSelectCmd = &cobra.Command{
 			columns = strings.Split(columns_string, ",")
 		}
 
+		option := csvutil.Options{
+			Columns:     columns,
+			Filters:     select_filters,
+			KeepHeaders: keepHeaders,
+			Limit:       limit,
+			Output:      pipe_write,
+			Delimiter:   delimiter,
+		}
+
 		if len(args) == 0 {
 			cmd.Print(">")
-			csvutil.Columns(&csvutil.Options{
-				Filename:    os.Stdin.Name(),
-				Columns:     columns,
-				Filters:     select_filters,
-				Threads:     1,
-				KeepHeaders: true,
-				Limit:       limit,
-				Delimiter:   delimiter,
-				Output:      pipe_write,
-			})
+			option.Filename = os.Stdin.Name()
+			option.Threads = 1
 		} else {
-			csvutil.Columns(&csvutil.Options{
-				Filename:    args[0],
-				Columns:     columns,
-				Filters:     select_filters,
-				Threads:     threads,
-				KeepHeaders: true,
-				Limit:       limit,
-				Delimiter:   delimiter,
-				Output:      pipe_write,
-			})
+			option.Filename = args[0]
+			option.Threads = threads
+		}
+
+		err := csvutil.Columns(&option)
+
+		if err != nil {
+			cmd.PrintErrln(err.Error())
+			os.Exit(1)
 		}
 	},
 }

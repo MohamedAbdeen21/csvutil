@@ -20,35 +20,29 @@ var selectCmd = &cobra.Command{
 	Args:  cobra.RangeArgs(0, 1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var columns []string
-		var err error
+
 		if cmd.Flags().Changed("columns") {
 			columns = strings.Split(columns_string, ",")
 		}
 
+		option := csvutil.Options{
+			Columns:     columns,
+			Filters:     select_filters,
+			KeepHeaders: keepHeaders,
+			Limit:       limit,
+			Output:      os.Stdout,
+			Delimiter:   delimiter,
+		}
+
 		if len(args) == 0 {
 			cmd.Print(">")
-			err = csvutil.Columns(&csvutil.Options{
-				Filename:    os.Stdin.Name(),
-				Columns:     columns,
-				Filters:     select_filters,
-				Threads:     1,
-				KeepHeaders: keepHeaders,
-				Limit:       limit,
-				Delimiter:   delimiter,
-				Output:      os.Stdout,
-			})
+			option.Filename = os.Stdin.Name()
+			option.Threads = 1
 		} else {
-			err = csvutil.Columns(&csvutil.Options{
-				Filename:    args[0],
-				Columns:     columns,
-				Filters:     select_filters,
-				Threads:     threads,
-				KeepHeaders: keepHeaders,
-				Limit:       limit,
-				Delimiter:   delimiter,
-				Output:      os.Stdout,
-			})
+			option.Filename = args[0]
+			option.Threads = threads
 		}
+		err := csvutil.Columns(&option)
 
 		if err != nil {
 			cmd.PrintErrln(err)
@@ -61,6 +55,6 @@ func init() {
 	selectCmd.Flags().StringVarP(&columns_string, "columns", "c", "", "Columns to output")
 	selectCmd.Flags().StringToStringVarP(&select_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=VALUE")
 	selectCmd.Flags().IntVarP(&limit, "limit", "n", -1, "Limit number of printed rows")
-	selectCmd.Flags().BoolVar(&keepHeaders, "headers", true, "Set to false to skip header row")
+	selectCmd.Flags().BoolVar(&keepHeaders, "headers", true, "Set to =false to skip header row") // can't use shorthand h, reserved for --help
 	RootCmd.AddCommand(selectCmd)
 }
