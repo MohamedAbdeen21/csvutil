@@ -20,14 +20,20 @@ var selectCmd = &cobra.Command{
 	Args:  cobra.RangeArgs(0, 1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var columns []string
+		var err error
 		if cmd.Flags().Changed("columns") {
 			columns = strings.Split(columns_string, ",")
 		}
 
 		if len(args) == 0 {
-			csvutil.Columns(os.Stdin.Name(), columns, select_filters, 1, keepHeaders, limit, delimiter, os.Stdout)
+			err = csvutil.Columns(os.Stdin.Name(), columns, select_filters, 1, keepHeaders, limit, delimiter, os.Stdout)
 		} else {
-			csvutil.Columns(args[0], columns, select_filters, threads, keepHeaders, limit, delimiter, os.Stdout)
+			err = csvutil.Columns(args[0], columns, select_filters, threads, keepHeaders, limit, delimiter, os.Stdout)
+		}
+
+		if err != nil {
+			cmd.PrintErrln(err)
+			os.Exit(1)
 		}
 	},
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -35,7 +36,7 @@ func setupFilters(filename string, mappers []*Mapper, filters map[string]string)
 	mapper_headers := make(map[int]string)
 	for key, value := range filters {
 		if _, ok := mapped_headers[key]; !ok {
-			return fmt.Errorf("column %s doesn't exist", key)
+			return fmt.Errorf("filter: column %s doesn't exist", key)
 		}
 		mapper_headers[mapped_headers[key]] = value
 	}
@@ -55,16 +56,18 @@ func Count(filename string, instances int, mode string, filters map[string]strin
 	}
 
 	if group != "" {
+		valid := false
+		group = strings.TrimSpace(group)
 		mapped_headers := mapHeaders(filename)
-		for key, index := range mapped_headers {
-			if key != group {
-				if index == len(mapped_headers)-1 {
-					// No match over all keys
-					return nil, fmt.Errorf("column %s doesn't exist", group)
-				}
-			} else {
+		for key := range mapped_headers {
+			if key == group {
+				valid = true
 				break
 			}
+		}
+
+		if !valid {
+			return nil, fmt.Errorf("group: column %s doesn't exist", group)
 		}
 
 		for _, mapper := range mappers {
@@ -115,7 +118,7 @@ func Stat(filename string, column string, instances int, stats []string, delimit
 	return newStatReducer(stats).reduceStat(channel)
 }
 
-func Columns(filename string, columns []string, filters map[string]string, instances int, keepHeaders bool, limit int, delimiter string, output *os.File) {
+func Columns(filename string, columns []string, filters map[string]string, instances int, keepHeaders bool, limit int, delimiter string, output *os.File) error {
 	mappers := setupMappers(filename, instances, delimiter)
 	channel := make(chan string)
 
@@ -143,11 +146,12 @@ func Columns(filename string, columns []string, filters map[string]string, insta
 		}
 	} else {
 		ordering = make([]int, len(columns))
-		for name, index := range headers {
-			for pos, col_name := range columns {
-				if name == col_name {
-					ordering[pos] = index
-				}
+		for pos, col_name := range columns {
+			index, exists := headers[col_name]
+			if exists {
+				ordering[pos] = index
+			} else {
+				return fmt.Errorf("select: column %s doesn't exist", col_name)
 			}
 		}
 	}
@@ -159,4 +163,5 @@ func Columns(filename string, columns []string, filters map[string]string, insta
 	}
 
 	newColumnsReducer(output, limit).reduceColumns(channel)
+	return nil
 }

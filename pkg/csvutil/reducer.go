@@ -19,6 +19,10 @@ type Reducer struct {
 	out *os.File
 }
 
+func newReducer() *Reducer {
+	return &Reducer{}
+}
+
 func newStatReducer(required_stats []string) *Reducer {
 	reducer := &Reducer{
 		stats:    make(map[string]float64),
@@ -28,10 +32,6 @@ func newStatReducer(required_stats []string) *Reducer {
 	reducer.stats["max"] = math.MinInt64
 	reducer.stats["nulls"] = 0
 	return reducer
-}
-
-func newReducer() *Reducer {
-	return &Reducer{}
 }
 
 func newColumnsReducer(fd *os.File, limit int) *Reducer {

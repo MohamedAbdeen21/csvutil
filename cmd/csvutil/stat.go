@@ -11,7 +11,7 @@ import (
 var stats_string string
 var statCmd = &cobra.Command{
 	Use:     "stat",
-	Short:   "Print stat about a column",
+	Short:   "Print statistics about a column",
 	Long:    "Print statistics like max, min, avg, and std_dev about a column",
 	Args:    cobra.RangeArgs(1, 2),
 	Example: "csvutil stat [flags] [file_name] [column_name]",

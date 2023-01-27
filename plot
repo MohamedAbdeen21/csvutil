@@ -2,14 +2,15 @@
 import sys
 from matplotlib import pyplot as plt
 from math import ceil
+from collections import Counter
 
 
 def sample(xs: list[any], n: int) -> tuple(list[any]):
     interval = [i for i in range(n + 1)]
     try:
-        xs.sort(key = lambda x: float(x))
+        xs = sorted(xs, key = lambda x: float(x))
     except:
-        xs.sort()
+        xs = sorted(xs)
     indexes = list(map(lambda x: x / n * len(xs), interval))
     indexes[-1] -= 1
     result = []
@@ -41,16 +42,24 @@ graph_type = inp[0]
 directory = inp[1]
 command = inp[2]
 data = inp[3:]
+print("Plotting ...")
 
 if command == "count":
-    data.sort(key=lambda x: x[0])
+    data.sort(key=lambda x: float(x.split(":")[0]))
     xs = [line.split(":")[0] for line in data]
     freq = list(map(float, [line.split(":")[1] for line in data]))
     plot(graph_type, xs=xs, freq=freq)
-elif command == "select":
-    plot(graph_type, xs=data)
 
-if len(data) < 50:
+elif command == "select":
+    try:
+        counter = Counter(list(map(float,data)))
+    except: 
+        counter = Counter(data)
+    xs = sorted([i for i in counter.keys()])
+    freq =  [counter[key] for key in xs]
+    plot(graph_type, xs=xs, freq=freq)
+
+if len(data) < 50 or command == "select":
     plt.xticks(rotation=90)
 else:
     ticks, labels = sample(xs, 10)
