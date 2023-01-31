@@ -67,5 +67,4 @@ var plotCmd = &cobra.Command{
 func init() {
 	plotCmd.PersistentFlags().StringVarP(&plotType, "plot", "p", plotType, "The type of plot")
 	plotCmd.PersistentFlags().StringVarP(&outputDir, "output", "o", "./plot.png", "Path of the generated plot")
-	RootCmd.AddCommand(plotCmd)
 }

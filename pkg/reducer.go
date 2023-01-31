@@ -88,7 +88,7 @@ func (reducer *Reducer) reduceStat(channel chan string) (map[string]float64, err
 			}
 			reducer.stats["sum"] += value
 
-			// avoid calculating if not necessary to save space
+			// avoid calculating if not necessary; to save space
 			if ExistsIn("std_dev", reducer.required) {
 				reducer.values = append(reducer.values, value)
 			}

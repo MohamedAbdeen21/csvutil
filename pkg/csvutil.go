@@ -29,14 +29,14 @@ func setupMappers(filename string, thread_count int, delimiter string) (mappers 
 	file_size := statFile(filename)
 
 	var offset int64 = 0
-	var chuck_size int64 = file_size / threads
+	var chunk_size int64 = file_size / threads
 	var limit int64 = 0
 
 	if filename == os.Stdin.Name() {
 		mappers = append(mappers, newMapper(0, offset, math.MaxInt64, filename, delimiter))
 	} else {
 		for i := int64(0); i < threads; i++ {
-			limit = adjustLimit(filename, offset, chuck_size)
+			limit = adjustLimit(filename, offset, chunk_size)
 			mappers = append(mappers, newMapper(i, offset, limit, filename, delimiter))
 			offset += limit
 		}

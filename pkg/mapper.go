@@ -167,7 +167,7 @@ func (mapper *Mapper) stat(line string) string {
 	for index := range mapper.columns {
 		return row[index]
 	}
-	panic("Column not found!")
+	return ""
 }
 
 func (mapper *Mapper) runCount() {
@@ -207,13 +207,11 @@ func (mapper *Mapper) runStat() {
 
 	for {
 		line, ok, eof := mapper._readLine(reader)
-
 		if eof {
 			break
 		}
 
 		mapper.channel <- mapper.stat(string(line))
-
 		if !ok {
 			break
 		}

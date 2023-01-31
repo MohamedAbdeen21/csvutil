@@ -1,7 +1,13 @@
 package main
 
-import csvutil "github.com/MohamedAbdeen21/csvutil/cmd"
+import (
+	"os"
+
+	csvutil "github.com/MohamedAbdeen21/csvutil/cmd"
+)
 
 func main() {
-	csvutil.Execute()
+	if err := csvutil.RootCmd().Execute(); err != nil {
+		os.Exit(1)
+	}
 }

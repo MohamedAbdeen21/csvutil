@@ -20,7 +20,7 @@ Delimiter can be specified using `-d` global flag.
 
 ## stat
 ```console
-$ ./csvutil stat input.csv Temperature
+$ ./csvutil stat input.csv -c Temperature
 min     : -89.00
 max     : 196.00
 nulls   : 69274.00

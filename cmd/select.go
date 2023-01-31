@@ -56,5 +56,4 @@ func init() {
 	selectCmd.Flags().StringToStringVarP(&select_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=VALUE")
 	selectCmd.Flags().IntVarP(&limit, "limit", "n", -1, "Limit number of printed rows")
 	selectCmd.Flags().BoolVar(&keepHeaders, "headers", true, "Set to =false to skip header row") // can't use shorthand h, reserved for --help
-	RootCmd.AddCommand(selectCmd)
 }

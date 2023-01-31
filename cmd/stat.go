@@ -9,14 +9,15 @@ import (
 )
 
 var stats_string string
+var column string
 
 var statCmd = &cobra.Command{
 	Use:     "stat",
-	Short:   "Print statistics about a column",
-	Long:    "Print statistics like max, min, avg, and std_dev about a column",
-	Args:    cobra.RangeArgs(1, 2),
-	Example: "csvutil stat [flags] [file_name] [column_name]",
-	Run: func(cmd *cobra.Command, args []string) {
+	Short:   "Print statistics about a numerical column",
+	Long:    "Print statistics like max, min, avg, and std_dev about a numerical column",
+	Args:    cobra.RangeArgs(0, 1),
+	Example: "csvutil stat [flags] [file_name] -c [column_name]",
+	RunE: func(cmd *cobra.Command, args []string) error {
 		var result = make(map[string]float64)
 		stats := strings.Split(stats_string, ",")
 
@@ -25,22 +26,21 @@ var statCmd = &cobra.Command{
 			Delimiter: delimiter,
 		}
 
-		if len(args) == 1 {
+		if len(args) == 0 {
 			cmd.Print(">")
 			option.Filename = os.Stdin.Name()
-			option.Columns = []string{args[0]}
+			option.Columns = []string{column}
 			option.Threads = 1
 		} else {
 			option.Filename = args[0]
-			option.Columns = []string{args[1]}
+			option.Columns = []string{column}
 			option.Threads = threads
 		}
 
 		result, err := csvutil.Stat(&option)
 
 		if err != nil {
-			cmd.PrintErrln(err)
-			os.Exit(1)
+			return err
 		}
 
 		for key, value := range result {
@@ -52,10 +52,12 @@ var statCmd = &cobra.Command{
 				}
 			}
 		}
+		return nil
 	},
 }
 
 func init() {
 	statCmd.Flags().StringVarP(&stats_string, "stat", "s", strings.Join(statPossibleStats, ","), "The stat to display, default all")
-	RootCmd.AddCommand(statCmd)
+	statCmd.Flags().StringVarP(&column, "column", "c", "", "The column to calculate stats on")
+	statCmd.MarkFlagRequired("column")
 }

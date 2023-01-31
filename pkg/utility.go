@@ -42,20 +42,17 @@ func mapHeaders(filename string) map[string]int {
 	return mapped_headers
 }
 
-func adjustLimit(filename string, offset int64, chuck_size int64) (limit int64) {
+func adjustLimit(filename string, offset int64, chunk_size int64) (limit int64) {
 	fd, err := os.Open(filename)
 	if err != nil {
-		panic(fmt.Sprintf("can't open file: %s", filename))
+		panic(fmt.Sprintf("can't open file %s", filename))
 	}
 	defer fd.Close()
-	if err != nil {
-		panic("No such file!")
-	}
 
-	fd.Seek(offset+chuck_size, io.SeekStart)
+	fd.Seek(offset+chunk_size, io.SeekStart)
 	reader := bufio.NewReader(fd)
 	line, _ := reader.ReadBytes('\n')
-	limit = chuck_size + int64(len(line))
+	limit = chunk_size + int64(len(line))
 	return limit
 }
 
