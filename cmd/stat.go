@@ -24,17 +24,17 @@ var statCmd = &cobra.Command{
 		option := csvutil.Options{
 			Stats:     stats,
 			Delimiter: delimiter,
+			Columns:   []string{column},
+			Threads:   threads,
 		}
 
 		if len(args) == 0 {
-			cmd.Print(">")
-			option.Filename = os.Stdin.Name()
-			option.Columns = []string{column}
-			option.Threads = 1
+			fd := csvutil.CopyToTemp(os.Stdin)
+			defer fd.Close()
+			defer os.Remove(fd.Name())
+			option.Filename = fd.Name()
 		} else {
 			option.Filename = args[0]
-			option.Columns = []string{column}
-			option.Threads = threads
 		}
 
 		result, err := csvutil.Stat(&option)

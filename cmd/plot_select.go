@@ -28,15 +28,14 @@ var plotSelectCmd = &cobra.Command{
 			Limit:       limit,
 			Output:      pipe_write,
 			Delimiter:   delimiter,
+			Threads:     threads,
 		}
 
 		if len(args) == 0 {
 			cmd.Print(">")
 			option.Filename = os.Stdin.Name()
-			option.Threads = 1
 		} else {
 			option.Filename = args[0]
-			option.Threads = threads
 		}
 
 		err := csvutil.Columns(&option)

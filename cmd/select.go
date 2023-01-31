@@ -32,15 +32,16 @@ var selectCmd = &cobra.Command{
 			Limit:       limit,
 			Output:      os.Stdout,
 			Delimiter:   delimiter,
+			Threads:     threads,
 		}
 
 		if len(args) == 0 {
-			cmd.Print(">")
-			option.Filename = os.Stdin.Name()
-			option.Threads = 1
+			fd := csvutil.CopyToTemp(os.Stdin)
+			defer fd.Close()
+			defer os.Remove(fd.Name())
+			option.Filename = fd.Name()
 		} else {
 			option.Filename = args[0]
-			option.Threads = threads
 		}
 		err := csvutil.Columns(&option)
 

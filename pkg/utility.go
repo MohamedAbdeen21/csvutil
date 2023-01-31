@@ -20,6 +20,13 @@ func ConstructStringFromList(list []string) string {
 	return result
 }
 
+func CopyToTemp(file *os.File) *os.File {
+	fd, _ := os.CreateTemp("", "stdin_temp")
+	data, _ := io.ReadAll(os.Stdin)
+	fd.Write(data)
+	return fd
+}
+
 func ExistsIn(value string, list []string) bool {
 	for _, val := range list {
 		if val == value {
@@ -32,10 +39,10 @@ func ExistsIn(value string, list []string) bool {
 func mapHeaders(filename string) map[string]int {
 	fd, _ := os.Open(filename)
 	defer fd.Close()
-	mapped_headers := make(map[string]int)
 	reader := bufio.NewReader(fd)
-	headers_line, _ := reader.ReadString('\n')
-	headers := strings.Split(headers_line, ",")
+	mapped_headers := make(map[string]int)
+	headers_line, _ := reader.ReadBytes('\n')
+	headers := strings.Split(string(headers_line), ",")
 	for index, value := range headers {
 		mapped_headers[value] = index
 	}
