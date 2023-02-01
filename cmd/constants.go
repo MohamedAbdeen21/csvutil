@@ -1,8 +1,8 @@
 package csvutil
 
 // count
-var countPossibleModes = []string{"lines", "bytes"}
+var CountPossibleModes = []string{"lines", "bytes"}
 
 // stat
-var statPossibleStats = []string{"max", "min", "mean", "avg", "sum", "std_dev", "nulls", "count"}
+var StatPossibleStats = []string{"max", "min", "mean", "avg", "sum", "std_dev", "nulls", "count"}
 var intStats = []string{"nulls", "count"}

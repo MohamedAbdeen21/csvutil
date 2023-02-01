@@ -14,7 +14,7 @@ var plotCountCmd = &cobra.Command{
 	Args:  cobra.RangeArgs(0, 1),
 	Run: func(cmd *cobra.Command, args []string) {
 
-		if !csvutil.ExistsIn(mode, countPossibleModes) {
+		if !csvutil.ExistsIn(mode, CountPossibleModes) {
 			panic("Mode must be one of the possible values")
 		}
 
@@ -57,9 +57,7 @@ var plotCountCmd = &cobra.Command{
 }
 
 func init() {
-	possibleModesString := csvutil.ConstructStringFromList(countPossibleModes)
-
-	plotCountCmd.Flags().StringVarP(&mode, "mode", "m", "lines", fmt.Sprintf("What to count\n%s", possibleModesString))
+	plotCountCmd.Flags().StringVarP(&mode, "mode", "m", "lines", fmt.Sprintf("What to count\n%v", CountPossibleModes))
 	plotCountCmd.Flags().StringVarP(&group, "group", "g", "", "Group by column and return count")
 	plotCountCmd.Flags().StringToStringVarP(&count_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=VALUE")
 

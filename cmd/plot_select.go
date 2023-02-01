@@ -32,8 +32,10 @@ var plotSelectCmd = &cobra.Command{
 		}
 
 		if len(args) == 0 {
-			cmd.Print(">")
-			option.Filename = os.Stdin.Name()
+			fd := csvutil.CopyToTemp(os.Stdin)
+			defer fd.Close()
+			defer os.Remove(fd.Name())
+			option.Filename = fd.Name()
 		} else {
 			option.Filename = args[0]
 		}

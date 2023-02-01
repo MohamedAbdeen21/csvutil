@@ -1,21 +1,17 @@
-package csvutil_test
+package csvutil
 
 import (
 	"strings"
 	"testing"
-
-	"github.com/spf13/cobra"
 )
-
-type void struct{}
 
 var filename = "input.csv"
 
-func expect(t *testing.T, root *cobra.Command, expected_error error) {
-	if err := root.Execute(); err == nil {
+func expect(t *testing.T, actual_error error, expected_error error) {
+	if actual_error == nil {
 		t.Errorf("command succeeded when it should have failed")
-	} else if err.Error() != expected_error.Error() {
-		t.Errorf("expected error \"%s\", got \"%s\"", expected_error.Error(), err.Error())
+	} else if actual_error.Error() != expected_error.Error() {
+		t.Errorf("expected error \"%s\", got \"%s\"", expected_error.Error(), actual_error.Error())
 	}
 }
 

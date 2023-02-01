@@ -122,10 +122,10 @@ func (reducer *Reducer) reduceColumns(channel chan string) {
 			return
 		case line := <-channel:
 			if reducer.limit > 0 {
-				reducer.out.WriteString(line + "\n")
+				reducer.out.WriteString(line)
 				reducer.limit--
 			} else if reducer.limit == -1 {
-				reducer.out.WriteString(line + "\n")
+				reducer.out.WriteString(line)
 			} else {
 				return
 			}

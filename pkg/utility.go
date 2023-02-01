@@ -8,21 +8,9 @@ import (
 	"strings"
 )
 
-func ConstructStringFromList(list []string) string {
-	var result string = "{"
-	for _, value := range list {
-		result += value
-		if value != list[len(list)-1] {
-			result += ","
-		}
-	}
-	result += "}"
-	return result
-}
-
-func CopyToTemp(file *os.File) *os.File {
+func CopyToTemp(file io.Reader) *os.File {
 	fd, _ := os.CreateTemp("", "stdin_temp")
-	data, _ := io.ReadAll(os.Stdin)
+	data, _ := io.ReadAll(file)
 	fd.Write(data)
 	return fd
 }
