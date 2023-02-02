@@ -1,7 +1,6 @@
 package csvutil
 
 import (
-	"fmt"
 	"io"
 	"math"
 	"strconv"
@@ -64,19 +63,47 @@ func (reducer *Reducer) reduceCount(mappers []*Mapper, mode string, wg *sync.Wai
 	return result
 }
 
-func (reducer *Reducer) reduceStat(channel chan string, wg *sync.WaitGroup) (map[string]float64, error) {
+func (reducer *Reducer) reduceStat(channel chan string, wg *sync.WaitGroup) map[string]float64 {
 	waitCh := make(chan int)
 	go func(wg *sync.WaitGroup) {
 		wg.Wait()
 		close(waitCh)
 	}(wg)
 
+	is_numerical_column := false
+	if ListExsistsIn([]string{"max", "min", "mean", "avg", "sum", "std_dev"}, reducer.required) {
+		is_numerical_column = true
+	}
+
+	// avoid calculating if not necessary; to save space
+	is_required_std_dev := false
+	if ExistsIn("std_dev", reducer.required) {
+		is_required_std_dev = true
+	}
+
 	for {
 		select {
 		case data := <-channel:
-			value, err := strconv.ParseFloat(data, 64)
-			if err != nil && data != "" {
-				return nil, fmt.Errorf("value provided is not numeric: %s", data)
+			var value float64
+			var err error
+			if is_numerical_column {
+				value, err = strconv.ParseFloat(data, 64)
+				if err != nil && data != "" {
+					is_numerical_column = false
+					// return nil, fmt.Errorf("value provided is not numeric: %s", data)
+				}
+
+				if value > reducer.stats["max"] {
+					reducer.stats["max"] = value
+				}
+				if value < reducer.stats["min"] {
+					reducer.stats["min"] = value
+				}
+				reducer.stats["sum"] += value
+
+				if is_required_std_dev {
+					reducer.values = append(reducer.values, value)
+				}
 			}
 
 			if data == "" {
@@ -85,31 +112,23 @@ func (reducer *Reducer) reduceStat(channel chan string, wg *sync.WaitGroup) (map
 				reducer.stats["count"]++
 			}
 
-			if value > reducer.stats["max"] {
-				reducer.stats["max"] = value
-			}
-			if value < reducer.stats["min"] {
-				reducer.stats["min"] = value
-			}
-			reducer.stats["sum"] += value
-
-			// avoid calculating if not necessary; to save space
-			if ExistsIn("std_dev", reducer.required) {
-				reducer.values = append(reducer.values, value)
-			}
 		case <-waitCh:
 			close(channel)
 			reducer.stats["mean"] = reducer.stats["sum"] / reducer.stats["count"]
 
 			// avoid calculating if not necessary to save space
-			if ExistsIn("std_dev", reducer.required) {
+			if is_required_std_dev {
 				var variance float64
 				for _, value := range reducer.values {
 					variance += math.Pow(reducer.stats["mean"]-value, 2)
 				}
 				reducer.stats["std_dev"] = math.Sqrt(variance / reducer.stats["sum"])
 			}
-			return reducer.stats, nil
+			if !is_numerical_column {
+				return map[string]float64{"nulls": reducer.stats["nulls"], "count": reducer.stats["count"]}
+			} else {
+				return reducer.stats
+			}
 		}
 	}
 }

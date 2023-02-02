@@ -127,7 +127,7 @@ func Stat(option *Options) (map[string]float64, error) {
 		go mapper.runStat(&wg)
 	}
 
-	return newStatReducer(option.Stats).reduceStat(channel, &wg)
+	return newStatReducer(option.Stats).reduceStat(channel, &wg), nil
 }
 
 func Columns(option *Options) error {

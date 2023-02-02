@@ -16,9 +16,10 @@ var count_nulls string
 
 func countCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "count",
-		Short: "Count the number of lines, bytes or frequency of column values",
-		Args:  cobra.RangeArgs(0, 1),
+		Use:     "count",
+		Short:   "Count the number of lines or bytes, or frequency of values in a column",
+		Args:    cobra.RangeArgs(0, 1),
+		Example: "csvutil count file.csv -g age -n 0\ncsvutil count file.csv -m lines -f age=30\ncsvutil count log.txt",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			if !csvutil.ExistsIn(mode, CountPossibleModes) {
@@ -67,7 +68,7 @@ func countCmd() *cobra.Command {
 	}
 	cmd.Flags().
 		StringVarP(&mode, "mode", "m", "lines", fmt.Sprintf("What to count\n%v", CountPossibleModes))
-	cmd.Flags().StringVarP(&group, "group", "g", "", "Group by column and return count")
+	cmd.Flags().StringVarP(&group, "group", "g", "", "Count the frequency of values in a column")
 	cmd.Flags().
 		StringToStringVarP(&count_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=\"VALUE1||VALUE2||...\"")
 	cmd.Flags().StringVarP(&count_nulls, "nulls", "n", "", "String to be considered as Null")

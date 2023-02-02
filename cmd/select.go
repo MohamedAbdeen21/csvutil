@@ -16,10 +16,11 @@ var keepHeaders bool
 
 func selectCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "select",
-		Short: "Output chosen columns",
-		Long:  "Output the columns specified by flag -c, if not specified all columns will be displayed. Choose -t 1 to preserve order of rows.\nFiltering is done before the limit. To limit before filtering, consider piping the output of `head` command.",
-		Args:  cobra.RangeArgs(0, 1),
+		Use:     "select",
+		Short:   "Output chosen columns",
+		Long:    "Output the columns specified by flag -c, if not specified all columns will be displayed. Choose -t 1 to preserve order of rows.\nFiltering is done before the limit. To limit before filtering, consider piping the output of `head` command.",
+		Example: "csvutil select file.csv -c name,age -f age=20 -n 20 --headers=false\ncsvutil select file.csv -c age,name > reordered_file.csv ",
+		Args:    cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var columns []string
 

@@ -16,10 +16,10 @@ var stats_nulls string
 func statCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "stat",
-		Short:   "Print statistics about a numerical column",
-		Long:    "Print statistics like max, min, avg, and std_dev about a numerical column",
+		Short:   "Print statistics about a column",
+		Long:    "Print statistics like max, min, avg, nulls, and std_dev about a numerical column, or nulls and count of non-numerical column",
 		Args:    cobra.RangeArgs(0, 1),
-		Example: "csvutil stat [flags] [file_name] -c [column_name]",
+		Example: "csvutil stat file.csv -c age -s max,min\ncsvutil stat filel.csv -c name -s nulls",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var result = make(map[string]float64)
 			stats := strings.Split(stats_string, ",")

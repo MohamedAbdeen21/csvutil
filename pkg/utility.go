@@ -24,6 +24,19 @@ func ExistsIn(value string, list []string) bool {
 	return false
 }
 
+func ListExsistsIn(list1, list2 []string) bool {
+	set := make(map[string]bool)
+	for _, value := range list1 {
+		set[value] = true
+	}
+	for _, value := range list2 {
+		if set[value] {
+			return true
+		}
+	}
+	return false
+}
+
 func mapHeaders(filename string) map[string]int {
 	fd, _ := os.Open(filename)
 	defer fd.Close()
