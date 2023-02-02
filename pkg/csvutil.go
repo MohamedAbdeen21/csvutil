@@ -2,13 +2,12 @@ package csvutil
 
 import (
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"strings"
 	"sync"
 )
-
-var wg sync.WaitGroup
 
 type Options struct {
 	Filename    string
@@ -20,7 +19,7 @@ type Options struct {
 	Columns     []string
 	KeepHeaders bool
 	Limit       int
-	Output      *os.File
+	Output      io.Writer
 	Stats       []string
 }
 
@@ -61,6 +60,7 @@ func setupFilters(filename string, mappers []*Mapper, filters map[string]string)
 }
 
 func Count(option *Options) (map[string]int64, error) {
+	var wg = sync.WaitGroup{}
 	mapped_headers := mapHeaders(option.Filename)
 	if option.Group != "" {
 		valid := false
@@ -95,17 +95,16 @@ func Count(option *Options) (map[string]int64, error) {
 		}
 	}
 
-	// run mappers
 	for _, mapper := range mappers {
 		wg.Add(1)
-		go mapper.runCount()
+		go mapper.runCount(&wg)
 	}
 
-	wg.Wait()
-	return newReducer().reduceCount(mappers[:], option.Mode), nil
+	return newReducer().reduceCount(mappers[:], option.Mode, &wg), nil
 }
 
 func Stat(option *Options) (map[string]float64, error) {
+	wg := sync.WaitGroup{}
 	mapped_headers := mapHeaders(option.Filename)
 	_, exists := mapped_headers[option.Columns[0]]
 	if !exists {
@@ -130,13 +129,14 @@ func Stat(option *Options) (map[string]float64, error) {
 	for _, mapper := range mappers {
 		mapper.setColumns(mapper_headers)
 		wg.Add(1)
-		go mapper.runStat()
+		go mapper.runStat(&wg)
 	}
 
-	return newStatReducer(option.Stats).reduceStat(channel)
+	return newStatReducer(option.Stats).reduceStat(channel, &wg)
 }
 
 func Columns(option *Options) error {
+	wg := sync.WaitGroup{}
 	var ordering []int
 	headers := mapHeaders(option.Filename)
 	if len(option.Columns) == 0 {
@@ -164,7 +164,7 @@ func Columns(option *Options) error {
 		mapper.setChannel(channel)
 	}
 
-	if !option.KeepHeaders || option.Output != os.Stdout {
+	if !option.KeepHeaders {
 		for _, mapper := range mappers {
 			mapper.setSkipHeaders(true)
 		}
@@ -177,9 +177,9 @@ func Columns(option *Options) error {
 	for _, mapper := range mappers {
 		mapper.setOrdering(ordering)
 		wg.Add(1)
-		go mapper.runColumns()
+		go mapper.runColumns(&wg)
 	}
 
-	newColumnsReducer(option.Output, option.Limit).reduceColumns(channel)
+	newColumnsReducer(option.Output, option.Limit).reduceColumns(channel, &wg)
 	return nil
 }

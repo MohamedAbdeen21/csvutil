@@ -36,9 +36,9 @@ func countCmd() *cobra.Command {
 			}
 
 			if len(args) == 0 {
-				fd := csvutil.CopyToTemp(os.Stdin)
-				defer fd.Close()
+				fd := csvutil.CopyToTemp(cmd.InOrStdin())
 				defer os.Remove(fd.Name())
+				defer fd.Close()
 				option.Filename = fd.Name()
 			} else {
 				option.Filename = args[0]

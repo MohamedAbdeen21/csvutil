@@ -30,7 +30,7 @@ func mapHeaders(filename string) map[string]int {
 	reader := bufio.NewReader(fd)
 	mapped_headers := make(map[string]int)
 	headers_line, _ := reader.ReadBytes('\n')
-	headers := strings.Split(string(headers_line), ",")
+	headers := strings.Split(strings.Trim(string(headers_line), "\n"), ",")
 	for index, value := range headers {
 		mapped_headers[value] = index
 	}

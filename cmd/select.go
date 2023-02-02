@@ -31,7 +31,7 @@ func selectCmd() *cobra.Command {
 				Filters:     select_filters,
 				KeepHeaders: keepHeaders,
 				Limit:       limit,
-				Output:      os.Stdout,
+				Output:      cmd.OutOrStdout(),
 				Delimiter:   delimiter,
 				Threads:     threads,
 			}

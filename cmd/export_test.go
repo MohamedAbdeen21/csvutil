@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-var filename = "input.csv"
+var filename = "testdata/input.csv"
 
 func expect(t *testing.T, actual_error error, expected_error error) {
 	if actual_error == nil {

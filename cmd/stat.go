@@ -31,8 +31,8 @@ func statCmd() *cobra.Command {
 
 			if len(args) == 0 {
 				fd := csvutil.CopyToTemp(cmd.InOrStdin())
-				defer fd.Close()
 				defer os.Remove(fd.Name())
+				defer fd.Close()
 				option.Filename = fd.Name()
 			} else {
 				option.Filename = args[0]

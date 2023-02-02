@@ -2,9 +2,10 @@ package csvutil
 
 import (
 	"fmt"
+	"io"
 	"math"
-	"os"
 	"strconv"
+	"sync"
 )
 
 type Reducer struct {
@@ -16,7 +17,7 @@ type Reducer struct {
 	stats    map[string]float64
 
 	// channel
-	out *os.File
+	out io.Writer
 }
 
 func newReducer() *Reducer {
@@ -34,14 +35,15 @@ func newStatReducer(required_stats []string) *Reducer {
 	return reducer
 }
 
-func newColumnsReducer(fd *os.File, limit int) *Reducer {
+func newColumnsReducer(fd io.Writer, limit int) *Reducer {
 	return &Reducer{
 		out:   fd,
 		limit: limit,
 	}
 }
 
-func (reducer *Reducer) reduceCount(mappers []*Mapper, mode string) map[string]int64 {
+func (reducer *Reducer) reduceCount(mappers []*Mapper, mode string, wg *sync.WaitGroup) map[string]int64 {
+	wg.Wait()
 	var result map[string]int64 = make(map[string]int64)
 	switch mode {
 	case "lines", "bytes":
@@ -59,7 +61,7 @@ func (reducer *Reducer) reduceCount(mappers []*Mapper, mode string) map[string]i
 	return result
 }
 
-func (reducer *Reducer) reduceStat(channel chan string) (map[string]float64, error) {
+func (reducer *Reducer) reduceStat(channel chan string, wg *sync.WaitGroup) (map[string]float64, error) {
 	waitCh := make(chan int)
 	go func() {
 		wg.Wait()
@@ -109,7 +111,7 @@ func (reducer *Reducer) reduceStat(channel chan string) (map[string]float64, err
 	}
 }
 
-func (reducer *Reducer) reduceColumns(channel chan string) {
+func (reducer *Reducer) reduceColumns(channel chan string, wg *sync.WaitGroup) {
 	waitCh := make(chan int)
 	go func() {
 		wg.Wait()
@@ -122,10 +124,10 @@ func (reducer *Reducer) reduceColumns(channel chan string) {
 			return
 		case line := <-channel:
 			if reducer.limit > 0 {
-				reducer.out.WriteString(line)
+				reducer.out.Write([]byte(line))
 				reducer.limit--
 			} else if reducer.limit == -1 {
-				reducer.out.WriteString(line)
+				reducer.out.Write([]byte(line))
 			} else {
 				return
 			}

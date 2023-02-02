@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 )
 
 type Mapper struct {
@@ -170,7 +171,7 @@ func (mapper *Mapper) stat(line string) string {
 	return ""
 }
 
-func (mapper *Mapper) runCount() {
+func (mapper *Mapper) runCount(wg *sync.WaitGroup) {
 	mapper.file.Seek(mapper.offset, io.SeekStart)
 	defer mapper.file.Close()
 	defer wg.Done()
@@ -195,7 +196,7 @@ func (mapper *Mapper) runCount() {
 	}
 }
 
-func (mapper *Mapper) runStat() {
+func (mapper *Mapper) runStat(wg *sync.WaitGroup) {
 	mapper.file.Seek(mapper.offset, io.SeekStart)
 	defer mapper.file.Close()
 	defer wg.Done()
@@ -215,11 +216,10 @@ func (mapper *Mapper) runStat() {
 		if !ok {
 			break
 		}
-
 	}
 }
 
-func (mapper *Mapper) runColumns() {
+func (mapper *Mapper) runColumns(wg *sync.WaitGroup) {
 	mapper.file.Seek(mapper.offset, io.SeekStart)
 	defer mapper.file.Close()
 	defer wg.Done()
