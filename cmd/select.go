@@ -1,6 +1,7 @@
 package csvutil
 
 import (
+	"math"
 	"os"
 	"strings"
 
@@ -17,18 +18,24 @@ func selectCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "select",
 		Short: "Output chosen columns",
-		Long:  "Output the columns specified by flag -c, if not specified all columns will be displayed. Specify -t 1 to preserve order of rows",
+		Long:  "Output the columns specified by flag -c, if not specified all columns will be displayed. Choose -t 1 to preserve order of rows.\nFiltering is done before the limit. To limit before filtering, consider piping the output of `head` command.",
 		Args:  cobra.RangeArgs(0, 1),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			var columns []string
 
 			if cmd.Flags().Changed("columns") {
 				columns = strings.Split(columns_string, ",")
 			}
 
+			filter := make(map[string][]string)
+			for key, value := range select_filters {
+				values := strings.Split(value, "||")
+				filter[key] = values
+			}
+
 			option := csvutil.Options{
 				Columns:     columns,
-				Filters:     select_filters,
+				Filters:     filter,
 				KeepHeaders: keepHeaders,
 				Limit:       limit,
 				Output:      cmd.OutOrStdout(),
@@ -37,7 +44,7 @@ func selectCmd() *cobra.Command {
 			}
 
 			if len(args) == 0 {
-				fd := csvutil.CopyToTemp(os.Stdin)
+				fd := csvutil.CopyToTemp(cmd.InOrStdin())
 				defer os.Remove(fd.Name())
 				defer fd.Close()
 				option.Filename = fd.Name()
@@ -47,14 +54,15 @@ func selectCmd() *cobra.Command {
 			err := csvutil.Columns(&option)
 
 			if err != nil {
-				cmd.PrintErrln(err)
-				os.Exit(1)
+				return err
 			}
+
+			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&columns_string, "columns", "c", "", "Columns to output")
-	cmd.Flags().StringToStringVarP(&select_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=VALUE")
-	cmd.Flags().IntVarP(&limit, "limit", "n", -1, "Limit number of printed rows")
+	cmd.Flags().StringToStringVarP(&select_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=\"VALUE1||VALUE2||...\"")
+	cmd.Flags().IntVarP(&limit, "limit", "n", math.MaxInt, "Limit number of printed rows")
 	cmd.Flags().BoolVar(&keepHeaders, "headers", true, "Set to =false to skip header row") // can't use shorthand h, reserved for --help
 	return cmd
 }

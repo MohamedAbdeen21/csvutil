@@ -39,7 +39,7 @@ func RootCmd() *cobra.Command {
 		SilenceUsage: true,
 	}
 	cmd.CompletionOptions.HiddenDefaultCmd = true
-	cmd.PersistentFlags().IntVarP(&threads, "threads", "t", 1, "Number of concurrent workers, using Stdin overrides this flag")
+	cmd.PersistentFlags().IntVarP(&threads, "threads", "t", 1, "Number of concurrent workers")
 	cmd.PersistentFlags().StringVarP(&delimiter, "delimiter", "d", ",", "Choose delimiter")
 	cmd.AddCommand(statCmd())
 	cmd.AddCommand(selectCmd())

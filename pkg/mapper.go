@@ -15,7 +15,7 @@ type Mapper struct {
 	limit     int64
 	file      *os.File
 	delimiter string
-	columns   map[int]string
+	columns   map[int][]string
 
 	// stat
 	channel chan string
@@ -44,7 +44,7 @@ func newMapper(id int64, offset int64, limit int64, filename string, delimiter s
 	}
 }
 
-func (mapper *Mapper) setColumns(columns map[int]string) {
+func (mapper *Mapper) setColumns(columns map[int][]string) {
 	mapper.columns = columns
 }
 
@@ -97,7 +97,7 @@ func (mapper *Mapper) _filter(line string) bool {
 		values := strings.Split(line, mapper.delimiter)
 		for index, value := range values {
 			match, isFound := mapper.columns[index]
-			if isFound && value != match {
+			if isFound && !ExistsIn(value, match) {
 				return false
 			}
 		}
@@ -147,19 +147,6 @@ func (mapper *Mapper) selectColumns(line string) (string, bool) {
 		return strings.Join(new_line, mapper.delimiter), true
 	} else {
 		return "", false
-	}
-}
-
-func (mapper *Mapper) getCount() map[string]int64 {
-	switch mapper.mode {
-	case "lines":
-		return map[string]int64{"total": mapper.lines_count}
-	case "bytes":
-		return map[string]int64{"total": mapper.bytes_count}
-	case "group":
-		return mapper.group_count
-	default:
-		return map[string]int64{"total": mapper.lines_count}
 	}
 }
 
@@ -237,6 +224,7 @@ func (mapper *Mapper) runColumns(wg *sync.WaitGroup) {
 		}
 
 		data, isValid := mapper.selectColumns(string(line))
+		data = strings.Trim(data, "\n")
 		if isValid {
 			mapper.channel <- data
 		}

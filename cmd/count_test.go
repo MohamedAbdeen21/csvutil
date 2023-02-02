@@ -42,7 +42,7 @@ func TestCountWithFilter(t *testing.T) {
 	}
 }
 
-func TestCountWithNonExistantFilter(t *testing.T) {
+func TestCountWithNonExistantantFilter(t *testing.T) {
 	column := "name"
 	expected := fmt.Errorf("filter: column %s doesn't exist", column)
 	cmd := RootCmd()
@@ -62,10 +62,10 @@ func TestCountMissingColumn(t *testing.T) {
 
 func TestCountGroup(t *testing.T) {
 	r, w, _ := os.Pipe()
-	expected := []string{"4:131193", "1:26053", "3:155105", "2:2532991"}
+	expected := []string{"US/Eastern:1221927", "US/Pacific:967094", "NULL:3659", "US/Central:488065", "US/Mountain:164597"}
 	sort.Strings(expected)
 	cmd := RootCmd()
-	cmd.SetArgs([]string{"count", filename, "-t", "6", "-g", "Severity"})
+	cmd.SetArgs([]string{"count", filename, "-t", "6", "-g", "Timezone"})
 	cmd.SetOut(w)
 	cmd.Execute()
 	w.Close()

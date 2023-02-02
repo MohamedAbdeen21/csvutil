@@ -3,8 +3,6 @@ package csvutil
 import (
 	"fmt"
 	"io"
-	"math"
-	"os"
 	"strings"
 	"sync"
 )
@@ -13,7 +11,7 @@ type Options struct {
 	Filename    string
 	Threads     int
 	Mode        string
-	Filters     map[string]string
+	Filters     map[string][]string
 	Group       string
 	Delimiter   string
 	Columns     []string
@@ -31,27 +29,23 @@ func setupMappers(filename string, thread_count int, delimiter string) (mappers 
 	var chunk_size int64 = file_size / threads
 	var limit int64 = 0
 
-	if filename == os.Stdin.Name() {
-		mappers = append(mappers, newMapper(0, offset, math.MaxInt64, filename, delimiter))
-	} else {
-		for i := int64(0); i < threads; i++ {
-			limit = adjustLimit(filename, offset, chunk_size)
-			mappers = append(mappers, newMapper(i, offset, limit, filename, delimiter))
-			offset += limit
-		}
+	for i := int64(0); i < threads; i++ {
+		limit = adjustLimit(filename, offset, chunk_size)
+		mappers = append(mappers, newMapper(i, offset, limit, filename, delimiter))
+		offset += limit
 	}
 
 	return mappers
 }
 
-func setupFilters(filename string, mappers []*Mapper, filters map[string]string) error {
+func setupFilters(filename string, mappers []*Mapper, filters map[string][]string) error {
 	mapped_headers := mapHeaders(filename)
-	mapper_headers := make(map[int]string)
-	for key, value := range filters {
+	mapper_headers := make(map[int][]string)
+	for key, values := range filters {
 		if _, ok := mapped_headers[key]; !ok {
 			return fmt.Errorf("filter: column %s doesn't exist", key)
 		}
-		mapper_headers[mapped_headers[key]] = value
+		mapper_headers[mapped_headers[key]] = values
 	}
 	for _, mapper := range mappers {
 		mapper.setColumns(mapper_headers)
@@ -119,10 +113,10 @@ func Stat(option *Options) (map[string]float64, error) {
 		mapper.setSkipHeaders(true)
 	}
 
-	mapper_headers := make(map[int]string)
+	mapper_headers := make(map[int][]string)
 	for col_name, col_index := range mapped_headers {
 		if col_name == option.Columns[0] {
-			mapper_headers[col_index] = "0"
+			mapper_headers[col_index] = []string{"0"}
 		}
 	}
 

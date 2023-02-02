@@ -3,6 +3,7 @@ package csvutil
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	csvutil "github.com/MohamedAbdeen21/csvutil/pkg"
 	"github.com/spf13/cobra"
@@ -22,9 +23,15 @@ var plotCountCmd = &cobra.Command{
 			mode = "group"
 		}
 
+		filter := make(map[string][]string)
+		for key, value := range count_filters {
+			values := strings.Split(value, "||")
+			filter[key] = values
+		}
+
 		option := csvutil.Options{
 			Mode:      mode,
-			Filters:   count_filters,
+			Filters:   filter,
 			Group:     group,
 			Delimiter: delimiter,
 			Threads:   threads,
@@ -59,7 +66,7 @@ var plotCountCmd = &cobra.Command{
 func init() {
 	plotCountCmd.Flags().StringVarP(&mode, "mode", "m", "lines", fmt.Sprintf("What to count\n%v", CountPossibleModes))
 	plotCountCmd.Flags().StringVarP(&group, "group", "g", "", "Group by column and return count")
-	plotCountCmd.Flags().StringToStringVarP(&count_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=VALUE")
+	plotCountCmd.Flags().StringToStringVarP(&count_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=\"VALUE1||VALUE2||...\"")
 
 	plotCountCmd.MarkFlagsMutuallyExclusive("group", "mode")
 

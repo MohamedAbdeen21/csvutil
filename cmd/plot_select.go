@@ -21,9 +21,15 @@ var plotSelectCmd = &cobra.Command{
 			columns = strings.Split(columns_string, ",")
 		}
 
+		filter := make(map[string][]string)
+		for key, value := range select_filters {
+			values := strings.Split(value, "||")
+			filter[key] = values
+		}
+
 		option := csvutil.Options{
 			Columns:     columns,
-			Filters:     select_filters,
+			Filters:     filter,
 			KeepHeaders: keepHeaders,
 			Limit:       limit,
 			Output:      pipe_write,
@@ -51,7 +57,7 @@ var plotSelectCmd = &cobra.Command{
 
 func init() {
 	plotSelectCmd.Flags().StringVarP(&columns_string, "columns", "c", "", "Columns to output")
-	plotSelectCmd.Flags().StringToStringVarP(&select_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=VALUE")
+	plotSelectCmd.Flags().StringToStringVarP(&select_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=\"VALUE1||VALUE2||...\"")
 	plotSelectCmd.Flags().IntVarP(&limit, "limit", "n", -1, "Limit number of printed rows")
 	plotCmd.AddCommand(plotSelectCmd)
 }
