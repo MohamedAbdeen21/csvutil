@@ -57,7 +57,8 @@ var plotSelectCmd = &cobra.Command{
 
 func init() {
 	plotSelectCmd.Flags().StringVarP(&columns_string, "columns", "c", "", "Columns to output")
-	plotSelectCmd.Flags().StringToStringVarP(&select_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=\"VALUE1||VALUE2||...\"")
+	plotSelectCmd.Flags().
+		StringToStringVarP(&select_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=\"VALUE1||VALUE2||...\"")
 	plotSelectCmd.Flags().IntVarP(&limit, "limit", "n", -1, "Limit number of printed rows")
 	plotCmd.AddCommand(plotSelectCmd)
 }

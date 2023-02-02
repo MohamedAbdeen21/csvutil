@@ -35,6 +35,7 @@ var plotCountCmd = &cobra.Command{
 			Group:     group,
 			Delimiter: delimiter,
 			Threads:   threads,
+			Nulls:     count_nulls,
 		}
 
 		// use stdin
@@ -64,9 +65,13 @@ var plotCountCmd = &cobra.Command{
 }
 
 func init() {
-	plotCountCmd.Flags().StringVarP(&mode, "mode", "m", "lines", fmt.Sprintf("What to count\n%v", CountPossibleModes))
+	plotCountCmd.Flags().
+		StringVarP(&mode, "mode", "m", "lines", fmt.Sprintf("What to count\n%v", CountPossibleModes))
 	plotCountCmd.Flags().StringVarP(&group, "group", "g", "", "Group by column and return count")
-	plotCountCmd.Flags().StringToStringVarP(&count_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=\"VALUE1||VALUE2||...\"")
+	plotCountCmd.Flags().
+		StringToStringVarP(&count_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=\"VALUE1||VALUE2||...\"")
+	plotCountCmd.Flags().
+		StringVarP(&count_nulls, "nulls", "n", "", "String to be considered as Null")
 
 	plotCountCmd.MarkFlagsMutuallyExclusive("group", "mode")
 

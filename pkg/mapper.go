@@ -16,6 +16,7 @@ type Mapper struct {
 	file      *os.File
 	delimiter string
 	columns   map[int][]string
+	nulls     string
 
 	// stat
 	channel chan string
@@ -32,7 +33,7 @@ type Mapper struct {
 	skipHeaders bool
 }
 
-func newMapper(id int64, offset int64, limit int64, filename string, delimiter string) *Mapper {
+func newMapper(id int64, offset int64, limit int64, filename string, delimiter string, nulls string) *Mapper {
 	fd, _ := os.Open(filename)
 	return &Mapper{
 		id:          id,
@@ -40,6 +41,7 @@ func newMapper(id int64, offset int64, limit int64, filename string, delimiter s
 		limit:       limit,
 		file:        fd,
 		delimiter:   delimiter,
+		nulls:       nulls,
 		group_count: make(map[string]int64),
 	}
 }
@@ -119,7 +121,7 @@ func (mapper *Mapper) _countGroups(line string) {
 		if index != mapper.group {
 			continue
 		}
-		if value == "" {
+		if value == mapper.nulls {
 			value = "NULL"
 		}
 		if mapper._filter(line) {
@@ -153,7 +155,11 @@ func (mapper *Mapper) selectColumns(line string) (string, bool) {
 func (mapper *Mapper) stat(line string) string {
 	row := strings.Split(line, mapper.delimiter)
 	for index := range mapper.columns {
-		return row[index]
+		if row[index] == mapper.nulls {
+			return ""
+		} else {
+			return row[index]
+		}
 	}
 	return ""
 }

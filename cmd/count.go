@@ -12,6 +12,7 @@ import (
 var mode string
 var group string
 var count_filters map[string]string
+var count_nulls string
 
 func countCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -40,6 +41,7 @@ func countCmd() *cobra.Command {
 				Group:     group,
 				Delimiter: delimiter,
 				Threads:   threads,
+				Nulls:     count_nulls,
 			}
 
 			if len(args) == 0 {
@@ -58,14 +60,17 @@ func countCmd() *cobra.Command {
 			}
 
 			for key, value := range count {
-				cmd.Printf("%s: %d\n", key, value)
+				cmd.OutOrStdout().Write([]byte(fmt.Sprintf("%s: %d\n", key, value)))
 			}
 			return nil
 		},
 	}
-	cmd.Flags().StringVarP(&mode, "mode", "m", "lines", fmt.Sprintf("What to count\n%v", CountPossibleModes))
+	cmd.Flags().
+		StringVarP(&mode, "mode", "m", "lines", fmt.Sprintf("What to count\n%v", CountPossibleModes))
 	cmd.Flags().StringVarP(&group, "group", "g", "", "Group by column and return count")
-	cmd.Flags().StringToStringVarP(&count_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=\"VALUE1||VALUE2||...\"")
+	cmd.Flags().
+		StringToStringVarP(&count_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=\"VALUE1||VALUE2||...\"")
+	cmd.Flags().StringVarP(&count_nulls, "nulls", "n", "", "String to be considered as Null")
 	cmd.MarkFlagsMutuallyExclusive("group", "mode")
 	return cmd
 }

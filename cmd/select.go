@@ -61,8 +61,11 @@ func selectCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&columns_string, "columns", "c", "", "Columns to output")
-	cmd.Flags().StringToStringVarP(&select_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=\"VALUE1||VALUE2||...\"")
+	cmd.Flags().
+		StringToStringVarP(&select_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=\"VALUE1||VALUE2||...\"")
 	cmd.Flags().IntVarP(&limit, "limit", "n", math.MaxInt, "Limit number of printed rows")
-	cmd.Flags().BoolVar(&keepHeaders, "headers", true, "Set to =false to skip header row") // can't use shorthand h, reserved for --help
+	// can't use shorthand h, reserved for --help
+	cmd.Flags().
+		BoolVar(&keepHeaders, "headers", true, "Set to =false to skip header row")
 	return cmd
 }

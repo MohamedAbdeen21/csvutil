@@ -19,9 +19,10 @@ type Options struct {
 	Limit       int
 	Output      io.Writer
 	Stats       []string
+	Nulls       string
 }
 
-func setupMappers(filename string, thread_count int, delimiter string) (mappers []*Mapper) {
+func setupMappers(filename string, thread_count int, delimiter string, nulls string) (mappers []*Mapper) {
 	threads := int64(thread_count)
 	file_size := statFile(filename)
 
@@ -31,7 +32,7 @@ func setupMappers(filename string, thread_count int, delimiter string) (mappers 
 
 	for i := int64(0); i < threads; i++ {
 		limit = adjustLimit(filename, offset, chunk_size)
-		mappers = append(mappers, newMapper(i, offset, limit, filename, delimiter))
+		mappers = append(mappers, newMapper(i, offset, limit, filename, delimiter, nulls))
 		offset += limit
 	}
 
@@ -72,7 +73,7 @@ func Count(option *Options) (map[string]int64, error) {
 
 	}
 
-	mappers := setupMappers(option.Filename, option.Threads, option.Delimiter)
+	mappers := setupMappers(option.Filename, option.Threads, option.Delimiter, option.Nulls)
 
 	for _, mapper := range mappers {
 		mapper.setMode(option.Mode)
@@ -105,7 +106,7 @@ func Stat(option *Options) (map[string]float64, error) {
 		return map[string]float64{}, fmt.Errorf("stat: column %s doesn't exist", option.Columns[0])
 	}
 
-	mappers := setupMappers(option.Filename, option.Threads, option.Delimiter)
+	mappers := setupMappers(option.Filename, option.Threads, option.Delimiter, option.Nulls)
 	channel := make(chan string)
 
 	for _, mapper := range mappers {
@@ -151,7 +152,7 @@ func Columns(option *Options) error {
 		}
 	}
 
-	mappers := setupMappers(option.Filename, option.Threads, option.Delimiter)
+	mappers := setupMappers(option.Filename, option.Threads, option.Delimiter, option.Nulls)
 	channel := make(chan string)
 
 	for _, mapper := range mappers {

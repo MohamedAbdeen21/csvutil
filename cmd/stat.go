@@ -1,6 +1,7 @@
 package csvutil
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -10,6 +11,7 @@ import (
 
 var stats_string string
 var column string
+var stats_nulls string
 
 func statCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -27,6 +29,7 @@ func statCmd() *cobra.Command {
 				Delimiter: delimiter,
 				Columns:   []string{column},
 				Threads:   threads,
+				Nulls:     stats_nulls,
 			}
 
 			if len(args) == 0 {
@@ -47,17 +50,20 @@ func statCmd() *cobra.Command {
 			for key, value := range result {
 				if csvutil.ExistsIn(key, stats) {
 					if csvutil.ExistsIn(key, intStats) {
-						cmd.Printf("%-8s: %0.f\n", key, value)
+						cmd.OutOrStdout().Write([]byte(fmt.Sprintf("%-8s: %0.f\n", key, value)))
 					} else {
-						cmd.Printf("%-8s: %.2f\n", key, value)
+						cmd.OutOrStdout().Write([]byte(fmt.Sprintf("%-8s: %.2f\n", key, value)))
 					}
 				}
 			}
 			return nil
 		},
 	}
-	cmd.Flags().StringVarP(&stats_string, "stat", "s", strings.Join(StatPossibleStats, ","), "The stat to display, default all")
+
+	cmd.Flags().
+		StringVarP(&stats_string, "stat", "s", strings.Join(StatPossibleStats, ","), "The stat to display, default all")
 	cmd.Flags().StringVarP(&column, "column", "c", "", "The column to calculate stats on")
+	cmd.Flags().StringVarP(&stats_nulls, "nulls", "n", "", "String to be considered as Null")
 	cmd.MarkFlagRequired("column")
 	return cmd
 }
