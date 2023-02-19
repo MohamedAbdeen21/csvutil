@@ -61,7 +61,7 @@ func statCmd() *cobra.Command {
 	}
 
 	cmd.Flags().
-		StringVarP(&stats_string, "stat", "s", strings.Join(StatPossibleStats, ","), "The stat to display, default all")
+		StringVarP(&stats_string, "stat", "s", strings.Join(statPossibleStats, ","), "The stat to display, default all")
 	cmd.Flags().StringVarP(&column, "column", "c", "", "The column to calculate stats on")
 	cmd.Flags().StringVarP(&stats_nulls, "nulls", "n", "", "String to be considered as Null")
 	cmd.MarkFlagRequired("column")

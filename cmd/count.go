@@ -14,16 +14,16 @@ var group string
 var count_filters map[string]string
 var count_nulls string
 
-func countCmd() *cobra.Command {
+func countCmd(return_copy *map[string]int64) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "count",
 		Short:   "Count the number of lines or bytes, or frequency of values in a column",
 		Args:    cobra.RangeArgs(0, 1),
-		Example: "csvutil count file.csv -g age -n 0\ncsvutil count file.csv -m lines -f age=30\ncsvutil count log.txt",
+		Example: "csvutil count file.csv -g age -n 0\ncsvutil count file.csv -m lines -f age=30",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			if !csvutil.ExistsIn(mode, CountPossibleModes) {
-				return fmt.Errorf("mode must be one of the possible values %v", CountPossibleModes)
+			if !csvutil.ExistsIn(mode, countPossibleModes) {
+				return fmt.Errorf("mode must be one of the possible values %v", countPossibleModes)
 			}
 
 			if cmd.Flags().Changed("group") {
@@ -56,6 +56,8 @@ func countCmd() *cobra.Command {
 
 			count, err := csvutil.Count(&option)
 
+			*return_copy = count
+
 			if err != nil {
 				return err
 			}
@@ -63,11 +65,12 @@ func countCmd() *cobra.Command {
 			for key, value := range count {
 				cmd.OutOrStdout().Write([]byte(fmt.Sprintf("%s: %d\n", key, value)))
 			}
+
 			return nil
 		},
 	}
 	cmd.Flags().
-		StringVarP(&mode, "mode", "m", "lines", fmt.Sprintf("What to count\n%v", CountPossibleModes))
+		StringVarP(&mode, "mode", "m", "lines", fmt.Sprintf("What to count\n%v", countPossibleModes))
 	cmd.Flags().StringVarP(&group, "group", "g", "", "Count the frequency of values in a column")
 	cmd.Flags().
 		StringToStringVarP(&count_filters, "filter", "f", map[string]string{}, "Filter where COLUMN=\"VALUE1||VALUE2||...\"")

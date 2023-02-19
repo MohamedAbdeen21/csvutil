@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 )
 
@@ -71,4 +73,20 @@ func statFile(filename string) int64 {
 		stat, _ := os.Stat(filename)
 		return stat.Size()
 	}
+}
+
+func openBrowser(filename string) error {
+	var err error
+
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", filename).Run()
+	case "windows":
+		err = exec.Command("cmd", "/c", "start", filename).Run()
+	case "darwin":
+		err = exec.Command("open", filename).Run()
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+	return err
 }

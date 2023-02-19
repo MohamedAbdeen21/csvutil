@@ -46,7 +46,9 @@ func TestCountWithNonExistantantFilter(t *testing.T) {
 	column := "name"
 	expected := fmt.Errorf("filter: column %s doesn't exist", column)
 	cmd := RootCmd()
-	cmd.SetArgs([]string{"count", filename, "-t", "12", "-f", fmt.Sprintf("%s=NonExistant", column)})
+	cmd.SetArgs(
+		[]string{"count", filename, "-t", "12", "-f", fmt.Sprintf("%s=NonExistant", column)},
+	)
 	cmd.SetErr(io.Discard)
 	expect(t, cmd.Execute(), expected)
 }
@@ -62,7 +64,13 @@ func TestCountMissingColumn(t *testing.T) {
 
 func TestCountGroup(t *testing.T) {
 	r, w, _ := os.Pipe()
-	expected := []string{"US/Eastern:1221927", "US/Pacific:967094", "NULL:3659", "US/Central:488065", "US/Mountain:164597"}
+	expected := []string{
+		"US/Eastern:1221927",
+		"US/Pacific:967094",
+		"NULL:3659",
+		"US/Central:488065",
+		"US/Mountain:164597",
+	}
 	sort.Strings(expected)
 	cmd := RootCmd()
 	cmd.SetArgs([]string{"count", filename, "-t", "6", "-g", "Timezone"})
@@ -78,7 +86,7 @@ func TestCountGroup(t *testing.T) {
 }
 
 func TestInvalidCountMode(t *testing.T) {
-	expected := fmt.Errorf("mode must be one of the possible values %v", CountPossibleModes)
+	expected := fmt.Errorf("mode must be one of the possible values %v", countPossibleModes)
 	cmd := RootCmd()
 	cmd.SetArgs([]string{"count", filename, "-m", "words"})
 	cmd.SetErr(io.Discard)
