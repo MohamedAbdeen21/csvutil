@@ -5,7 +5,8 @@ import (
 	"os"
 	"strings"
 
-	csvutil "github.com/MohamedAbdeen21/csvutil/pkg"
+	"github.com/MohamedAbdeen21/csvutil/pkg"
+	"github.com/MohamedAbdeen21/csvutil/pkg/utility"
 	"github.com/spf13/cobra"
 )
 
@@ -45,7 +46,7 @@ func selectCmd() *cobra.Command {
 			}
 
 			if len(args) == 0 {
-				fd := csvutil.CopyToTemp(cmd.InOrStdin())
+				fd := utility.CopyToTemp(cmd.InOrStdin())
 				defer os.Remove(fd.Name())
 				defer fd.Close()
 				option.Filename = fd.Name()

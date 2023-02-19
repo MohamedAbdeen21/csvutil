@@ -4,7 +4,7 @@ import (
 	"io"
 	"strings"
 
-	csvutil "github.com/MohamedAbdeen21/csvutil/pkg"
+	"github.com/MohamedAbdeen21/csvutil/pkg/plotter"
 	"github.com/spf13/cobra"
 )
 
@@ -16,11 +16,11 @@ func plotCountCmd() *cobra.Command {
 	cmd.PostRun = func(cmd *cobra.Command, args []string) {
 		switch strings.ToLower(plotType) {
 		case "bar":
-			csvutil.BarPlotGroup(column, data, outputDir)
+			plotter.BarPlotGroup(column, data, outputDir)
 		case "scatter":
-			csvutil.ScatterPlotGroup(column, data, outputDir)
+			plotter.ScatterPlotGroup(column, data, outputDir)
 		case "line":
-			csvutil.LinePlotGroup(column, data, outputDir)
+			plotter.LinePlotGroup(column, data, outputDir)
 		}
 	}
 	return cmd

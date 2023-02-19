@@ -5,7 +5,8 @@ import (
 	"os"
 	"strings"
 
-	csvutil "github.com/MohamedAbdeen21/csvutil/pkg"
+	"github.com/MohamedAbdeen21/csvutil/pkg"
+	"github.com/MohamedAbdeen21/csvutil/pkg/utility"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +23,7 @@ func countCmd(return_copy *map[string]int64) *cobra.Command {
 		Example: "csvutil count file.csv -g age -n 0\ncsvutil count file.csv -m lines -f age=30",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			if !csvutil.ExistsIn(mode, countPossibleModes) {
+			if !utility.ExistsIn(mode, countPossibleModes) {
 				return fmt.Errorf("mode must be one of the possible values %v", countPossibleModes)
 			}
 
@@ -46,7 +47,7 @@ func countCmd(return_copy *map[string]int64) *cobra.Command {
 			}
 
 			if len(args) == 0 {
-				fd := csvutil.CopyToTemp(cmd.InOrStdin())
+				fd := utility.CopyToTemp(cmd.InOrStdin())
 				defer os.Remove(fd.Name())
 				defer fd.Close()
 				option.Filename = fd.Name()

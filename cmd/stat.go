@@ -5,7 +5,8 @@ import (
 	"os"
 	"strings"
 
-	csvutil "github.com/MohamedAbdeen21/csvutil/pkg"
+	"github.com/MohamedAbdeen21/csvutil/pkg"
+	"github.com/MohamedAbdeen21/csvutil/pkg/utility"
 	"github.com/spf13/cobra"
 )
 
@@ -33,7 +34,7 @@ func statCmd() *cobra.Command {
 			}
 
 			if len(args) == 0 {
-				fd := csvutil.CopyToTemp(cmd.InOrStdin())
+				fd := utility.CopyToTemp(cmd.InOrStdin())
 				defer os.Remove(fd.Name())
 				defer fd.Close()
 				option.Filename = fd.Name()
@@ -48,8 +49,8 @@ func statCmd() *cobra.Command {
 			}
 
 			for key, value := range result {
-				if csvutil.ExistsIn(key, stats) {
-					if csvutil.ExistsIn(key, intStats) {
+				if utility.ExistsIn(key, stats) {
+					if utility.ExistsIn(key, intStats) {
 						cmd.OutOrStdout().Write([]byte(fmt.Sprintf("%-8s: %0.f\n", key, value)))
 					} else {
 						cmd.OutOrStdout().Write([]byte(fmt.Sprintf("%-8s: %.2f\n", key, value)))
