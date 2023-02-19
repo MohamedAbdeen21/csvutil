@@ -1,4 +1,4 @@
-package csvutil
+package utility
 
 import (
 	"bufio"
@@ -39,7 +39,7 @@ func ListExsistsIn(list1, list2 []string) bool {
 	return false
 }
 
-func mapHeaders(filename string) map[string]int {
+func MapHeaders(filename string) map[string]int {
 	fd, _ := os.Open(filename)
 	defer fd.Close()
 	reader := bufio.NewReader(fd)
@@ -52,7 +52,7 @@ func mapHeaders(filename string) map[string]int {
 	return mapped_headers
 }
 
-func adjustLimit(filename string, offset int64, chunk_size int64) (limit int64) {
+func AdjustLimit(filename string, offset int64, chunk_size int64) (limit int64) {
 	fd, err := os.Open(filename)
 	if err != nil {
 		panic(fmt.Sprintf("can't open file %s", filename))
@@ -66,7 +66,7 @@ func adjustLimit(filename string, offset int64, chunk_size int64) (limit int64) 
 	return limit
 }
 
-func statFile(filename string) int64 {
+func StatFile(filename string) int64 {
 	if filename == "" {
 		return 0
 	} else {
@@ -75,7 +75,7 @@ func statFile(filename string) int64 {
 	}
 }
 
-func openBrowser(filename string) error {
+func OpenBrowser(filename string) error {
 	var err error
 
 	switch runtime.GOOS {

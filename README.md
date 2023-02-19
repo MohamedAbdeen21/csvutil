@@ -1,14 +1,14 @@
 # CSVutil
 
-# Usage
+## Usage
 
-Currently CSVutil provides four main subcommands:
+Currently, CSVutil provides four main subcommands:
+
 - `select`
 - `stat`
 - `count`
 - `plot`
-    - `select`
-    - `count`
+  - `count`
 
 Each command can be used to read data from Stdin.
 
@@ -16,9 +16,10 @@ Number of Goroutines can be specified using the `-t` global flag.
 
 Delimiter can be specified using `-d` global flag.
 
-# Examples
+## Examples
 
-## stat
+### stat
+
 ```console
 $ ./csvutil stat input.csv -c Temperature
 min     : -89.00
@@ -30,13 +31,16 @@ std_dev : 2.67
 ```
 
 ```console
+
 $ head -n 10000 input.csv | ./csvutil stat Humidity -s max,min
 min     : 0.00
 max     : 100.00
 ```
 
-## count
+### count
+
 Use `-g` or `--group` flag to count column frequency
+
 ```console
 $ ./csvutil count -t 12 -g Severity -f State=FL input.csv 
 3: 11478
@@ -50,16 +54,24 @@ $ ./csvutil count input.csv
 total: 2845343
 ```
 
-## select
-Can be used to reorder columns or extract a subset of columns. Setting `-t` flag will not maintain order of rows due to the concurrent nature of execution. Set `-t 1` to maintain order of rows.
+### select
+
+Can be used to reorder columns or extract a subset of columns.
+Setting `-t` flag will not maintain order of rows due to the concurrent nature
+of execution. Set `-t 1` to maintain order of rows.
+
 ```console
-$ ./csvutil select input.csv -c Severity,Temperature,Humidity -f State=WI > subset.csv
+./csvutil select input.csv -c Severity,Temperature,Humidity -f State=WI > subset.csv
 ```
 
-## plot
+### plot
+
 Plot can take the following commands as subcommands:
+
 - `count` with `-g` flag, uses bars as default graphs
-- `select`, uses histograms as default graphs
+
+The plot is displayed in a browser tab, thus the output must be in `.html` extension.
+
 ```console
-$ ./csvutil plot select -c Temperature input.csv -o ./plot.png -p hist
+./csvutil plot count -g Temperature input.csv -o ./plot.html -p line -t 6
 ```

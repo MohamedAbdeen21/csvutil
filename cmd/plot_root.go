@@ -1,8 +1,11 @@
 package csvutil
 
 import (
+	"fmt"
 	"path/filepath"
+	"strings"
 
+	"github.com/MohamedAbdeen21/csvutil/pkg/utility"
 	"github.com/spf13/cobra"
 )
 
@@ -21,6 +24,10 @@ func plotCmd() *cobra.Command {
 			err := cmd.Root().PersistentPreRunE(cmd, args)
 			if err != nil {
 				return err
+			}
+
+			if !utility.ExistsIn(strings.ToLower(plotType), plotPossibleTypes) {
+				return fmt.Errorf("%s is not supported, use one of %v", plotType, plotPossibleTypes)
 			}
 
 			if cmd.Flags().Changed("output") {

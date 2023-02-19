@@ -1,6 +1,8 @@
-package csvutil
+package reducer
 
 import (
+	"github.com/MohamedAbdeen21/csvutil/pkg/mapper"
+	"github.com/MohamedAbdeen21/csvutil/pkg/utility"
 	"io"
 	"math"
 	"strconv"
@@ -19,11 +21,11 @@ type Reducer struct {
 	out io.Writer
 }
 
-func newReducer() *Reducer {
+func NewReducer() *Reducer {
 	return &Reducer{}
 }
 
-func newStatReducer(required_stats []string) *Reducer {
+func NewStatReducer(required_stats []string) *Reducer {
 	reducer := &Reducer{
 		stats:    make(map[string]float64),
 		required: required_stats,
@@ -34,28 +36,28 @@ func newStatReducer(required_stats []string) *Reducer {
 	return reducer
 }
 
-func newColumnsReducer(fd io.Writer, limit int) *Reducer {
+func NewColumnsReducer(fd io.Writer, limit int) *Reducer {
 	return &Reducer{
 		out:   fd,
 		limit: limit,
 	}
 }
 
-func (reducer *Reducer) reduceCount(mappers []*Mapper, mode string, wg *sync.WaitGroup) map[string]int64 {
+func (reducer *Reducer) ReduceCount(mappers []*mapper.Mapper, mode string, wg *sync.WaitGroup) map[string]int64 {
 	wg.Wait()
 	var result map[string]int64 = make(map[string]int64)
 	switch mode {
 	case "lines":
-		for _, mapper := range mappers {
-			result["total"] += mapper.lines_count
+		for _, m := range mappers {
+			result["total"] += m.GetLinesCount()
 		}
 	case "bytes":
-		for _, mapper := range mappers {
-			result["total"] += mapper.bytes_count
+		for _, m := range mappers {
+			result["total"] += m.GetBytesCount()
 		}
 	case "group":
-		for _, mapper := range mappers {
-			for key, value := range mapper.group_count {
+		for _, m := range mappers {
+			for key, value := range m.GetGroupCount() {
 				result[key] += value
 			}
 		}
@@ -63,7 +65,7 @@ func (reducer *Reducer) reduceCount(mappers []*Mapper, mode string, wg *sync.Wai
 	return result
 }
 
-func (reducer *Reducer) reduceStat(channel chan string, wg *sync.WaitGroup) map[string]float64 {
+func (reducer *Reducer) ReduceStat(channel chan string, wg *sync.WaitGroup) map[string]float64 {
 	waitCh := make(chan int)
 	go func(wg *sync.WaitGroup) {
 		wg.Wait()
@@ -71,13 +73,13 @@ func (reducer *Reducer) reduceStat(channel chan string, wg *sync.WaitGroup) map[
 	}(wg)
 
 	is_numerical_column := false
-	if ListExsistsIn([]string{"max", "min", "mean", "avg", "sum", "std_dev"}, reducer.required) {
+	if utility.ListExsistsIn([]string{"max", "min", "mean", "avg", "sum", "std_dev"}, reducer.required) {
 		is_numerical_column = true
 	}
 
 	// avoid calculating if not necessary; to save space
 	is_required_std_dev := false
-	if ExistsIn("std_dev", reducer.required) {
+	if utility.ExistsIn("std_dev", reducer.required) {
 		is_required_std_dev = true
 	}
 
@@ -133,7 +135,7 @@ func (reducer *Reducer) reduceStat(channel chan string, wg *sync.WaitGroup) map[
 	}
 }
 
-func (reducer *Reducer) reduceColumns(channel chan string, wg *sync.WaitGroup) {
+func (reducer *Reducer) ReduceColumns(channel chan string, wg *sync.WaitGroup) {
 	waitCh := make(chan int)
 	go func(wg *sync.WaitGroup) {
 		wg.Wait()

@@ -1,4 +1,4 @@
-package csvutil
+package plotter
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/MohamedAbdeen21/csvutil/pkg/utility"
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/opts"
 )
@@ -71,7 +72,7 @@ func BarPlotGroup(column string, data map[string]int64, outputFile string) {
 	f, _ := os.Create(outputFile)
 	defer f.Close()
 	bar.Render(f)
-	openBrowser(outputFile)
+	utility.OpenBrowser(outputFile)
 }
 
 func processDataScatter(data map[string]int64) ([]string, []opts.ScatterData) {
@@ -100,7 +101,7 @@ func ScatterPlotGroup(column string, data map[string]int64, outputFile string) {
 	f, _ := os.Create(outputFile)
 	defer f.Close()
 	scatter.Render(f)
-	openBrowser(outputFile)
+	utility.OpenBrowser(outputFile)
 }
 
 func processDataLine(data map[string]int64) ([]string, []opts.LineData) {
@@ -129,5 +130,5 @@ func LinePlotGroup(column string, data map[string]int64, outputFile string) {
 	f, _ := os.Create(outputFile)
 	defer f.Close()
 	line.Render(f)
-	openBrowser(outputFile)
+	utility.OpenBrowser(outputFile)
 }
