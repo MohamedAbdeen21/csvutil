@@ -46,28 +46,34 @@ func NewMapper(id int64, offset int64, limit int64, filename string, delimiter s
 	}
 }
 
-func (mapper *Mapper) SetGroup(column_index int) {
+func (mapper *Mapper) SetGroup(column_index int) *Mapper {
 	mapper.group = column_index
+	return mapper
 }
 
-func (mapper *Mapper) SetColumns(columns map[int][]string) {
+func (mapper *Mapper) SetColumns(columns map[int][]string) *Mapper {
 	mapper.columns = columns
+	return mapper
 }
 
-func (mapper *Mapper) SetMode(mode string) {
+func (mapper *Mapper) SetMode(mode string) *Mapper {
 	mapper.mode = mode
+	return mapper
 }
 
-func (mapper *Mapper) SetChannel(channel chan string) {
+func (mapper *Mapper) SetChannel(channel chan string) *Mapper {
 	mapper.channel = channel
+	return mapper
 }
 
-func (mapper *Mapper) SetOrdering(ordering []int) {
+func (mapper *Mapper) SetOrdering(ordering []int) *Mapper {
 	mapper.ordering = ordering
+	return mapper
 }
 
-func (mapper *Mapper) SetSkipHeaders(val bool) {
+func (mapper *Mapper) SetSkipHeaders(val bool) *Mapper {
 	mapper.skipHeaders = val
+	return mapper
 }
 
 func (mapper *Mapper) GetLinesCount() int64 {

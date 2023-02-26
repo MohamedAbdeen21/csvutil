@@ -2,12 +2,13 @@ package csvutil
 
 import (
 	"fmt"
-	"github.com/MohamedAbdeen21/csvutil/pkg/mapper"
-	"github.com/MohamedAbdeen21/csvutil/pkg/reducer"
-	"github.com/MohamedAbdeen21/csvutil/pkg/utility"
 	"io"
 	"strings"
 	"sync"
+
+	"github.com/MohamedAbdeen21/csvutil/pkg/mapper"
+	"github.com/MohamedAbdeen21/csvutil/pkg/reducer"
+	"github.com/MohamedAbdeen21/csvutil/pkg/utility"
 )
 
 type Options struct {
@@ -42,52 +43,43 @@ func setupMappers(filename string, thread_count int, delimiter string, nulls str
 	return mappers
 }
 
-func setupFilters(filename string, mappers []*mapper.Mapper, filters map[string][]string) error {
+func setupFilters(filename string, filters map[string][]string) (map[int][]string, error) {
 	mapped_headers := utility.MapHeaders(filename)
 	mapper_headers := make(map[int][]string)
+
 	for key, values := range filters {
-		if _, ok := mapped_headers[key]; !ok {
-			return fmt.Errorf("filter: column %s doesn't exist", key)
+		if _, exists := mapped_headers[key]; !exists {
+			return nil, fmt.Errorf("filter: column %s doesn't exist", key)
 		}
 		mapper_headers[mapped_headers[key]] = values
 	}
-	for _, mapper := range mappers {
-		mapper.SetColumns(mapper_headers)
-	}
-	return nil
+
+	return mapper_headers, nil
 }
 
 func Count(option *Options) (map[string]int64, error) {
-	var wg = sync.WaitGroup{}
+	wg := sync.WaitGroup{}
+
 	mapped_headers := utility.MapHeaders(option.Filename)
 	if option.Group != "" {
-		valid := false
 		option.Group = strings.TrimSpace(option.Group)
-		for key := range mapped_headers {
-			if key == option.Group {
-				valid = true
-				break
-			}
-		}
-
-		if !valid {
+		if _, exists := mapped_headers[option.Group]; !exists {
 			return nil, fmt.Errorf("group: column %s doesn't exist", option.Group)
 		}
-
 	}
 
 	mappers := setupMappers(option.Filename, option.Threads, option.Delimiter, option.Nulls)
 
 	for _, mapper := range mappers {
-		mapper.SetMode(option.Mode)
-		mapper.SetSkipHeaders(true)
 		if option.Group != "" {
 			mapper.SetGroup(mapped_headers[option.Group])
 		}
 	}
 
+	var mapper_headers map[int][]string
+	var err error
 	if len(option.Filters) != 0 {
-		err := setupFilters(option.Filename, mappers, option.Filters)
+		mapper_headers, err = setupFilters(option.Filename, option.Filters)
 		if err != nil {
 			return nil, err
 		}
@@ -95,7 +87,11 @@ func Count(option *Options) (map[string]int64, error) {
 
 	for _, mapper := range mappers {
 		wg.Add(1)
-		go mapper.RunCount(&wg)
+		go mapper.
+			SetColumns(mapper_headers).
+			SetMode(option.Mode).
+			SetSkipHeaders(true).
+			RunCount(&wg)
 	}
 
 	return reducer.NewReducer().ReduceCount(mappers[:], option.Mode, &wg), nil
@@ -112,11 +108,6 @@ func Stat(option *Options) (map[string]float64, error) {
 	mappers := setupMappers(option.Filename, option.Threads, option.Delimiter, option.Nulls)
 	channel := make(chan string)
 
-	for _, mapper := range mappers {
-		mapper.SetChannel(channel)
-		mapper.SetSkipHeaders(true)
-	}
-
 	mapper_headers := make(map[int][]string)
 	for col_name, col_index := range mapped_headers {
 		if col_name == option.Columns[0] {
@@ -125,9 +116,12 @@ func Stat(option *Options) (map[string]float64, error) {
 	}
 
 	for _, mapper := range mappers {
-		mapper.SetColumns(mapper_headers)
 		wg.Add(1)
-		go mapper.RunStat(&wg)
+		go mapper.
+			SetColumns(mapper_headers).
+			SetChannel(channel).
+			SetSkipHeaders(true).
+			RunStat(&wg)
 	}
 
 	return reducer.NewStatReducer(option.Stats).ReduceStat(channel, &wg), nil
@@ -135,10 +129,11 @@ func Stat(option *Options) (map[string]float64, error) {
 
 func Columns(option *Options) error {
 	wg := sync.WaitGroup{}
+
 	var ordering []int
 	headers := utility.MapHeaders(option.Filename)
 	if len(option.Columns) == 0 {
-		// all columns in the correct order
+		// all columns and in the correct order
 		ordering = make([]int, len(headers))
 		for _, index := range headers {
 			ordering[index] = index
@@ -146,8 +141,7 @@ func Columns(option *Options) error {
 	} else {
 		ordering = make([]int, len(option.Columns))
 		for pos, col_name := range option.Columns {
-			index, exists := headers[col_name]
-			if exists {
+			if index, exists := headers[col_name]; exists {
 				ordering[pos] = index
 			} else {
 				return fmt.Errorf("select: column %s doesn't exist", col_name)
@@ -158,24 +152,20 @@ func Columns(option *Options) error {
 	mappers := setupMappers(option.Filename, option.Threads, option.Delimiter, option.Nulls)
 	channel := make(chan string)
 
-	for _, mapper := range mappers {
-		mapper.SetChannel(channel)
-	}
-
-	if !option.KeepHeaders {
-		for _, mapper := range mappers {
-			mapper.SetSkipHeaders(true)
-		}
-	}
-
+	var mapper_headers map[int][]string
 	if len(option.Filters) != 0 {
-		setupFilters(option.Filename, mappers, option.Filters)
+		// Non-existant columns will be caught above
+		mapper_headers, _ = setupFilters(option.Filename, option.Filters)
 	}
 
 	for _, mapper := range mappers {
-		mapper.SetOrdering(ordering)
 		wg.Add(1)
-		go mapper.RunColumns(&wg)
+		go mapper.
+			SetColumns(mapper_headers).
+			SetSkipHeaders(!option.KeepHeaders).
+			SetOrdering(ordering).
+			SetChannel(channel).
+			RunColumns(&wg)
 	}
 
 	reducer.NewColumnsReducer(option.Output, option.Limit).ReduceColumns(channel, &wg)
