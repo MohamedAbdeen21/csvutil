@@ -56,7 +56,7 @@ func processDataBar(data map[string]int64) ([]string, []opts.BarData) {
 	return keys, values
 }
 
-func BarPlotGroup(column string, data map[string]int64, outputFile string) {
+func BarPlotGroup(column string, data map[string]int64, outputFile string) error {
 	keys, values := processDataBar(data)
 	bar := charts.NewBar()
 	bar.SetGlobalOptions(
@@ -72,7 +72,11 @@ func BarPlotGroup(column string, data map[string]int64, outputFile string) {
 	f, _ := os.Create(outputFile)
 	defer f.Close()
 	bar.Render(f)
-	utility.OpenBrowser(outputFile)
+	err := utility.OpenBrowser(outputFile)
+	if err != nil {
+		return fmt.Errorf("can't open browser %v", err)
+	}
+	return nil
 }
 
 func processDataScatter(data map[string]int64) ([]string, []opts.ScatterData) {
@@ -87,7 +91,7 @@ func processDataScatter(data map[string]int64) ([]string, []opts.ScatterData) {
 	return keys, values
 }
 
-func ScatterPlotGroup(column string, data map[string]int64, outputFile string) {
+func ScatterPlotGroup(column string, data map[string]int64, outputFile string) error {
 	keys, values := processDataScatter(data)
 	scatter := charts.NewScatter()
 	scatter.SetGlobalOptions(
@@ -101,7 +105,11 @@ func ScatterPlotGroup(column string, data map[string]int64, outputFile string) {
 	f, _ := os.Create(outputFile)
 	defer f.Close()
 	scatter.Render(f)
-	utility.OpenBrowser(outputFile)
+	err := utility.OpenBrowser(outputFile)
+	if err != nil {
+		return fmt.Errorf("can't open browser %v", err)
+	}
+	return nil
 }
 
 func processDataLine(data map[string]int64) ([]string, []opts.LineData) {
@@ -116,7 +124,7 @@ func processDataLine(data map[string]int64) ([]string, []opts.LineData) {
 	return keys, values
 }
 
-func LinePlotGroup(column string, data map[string]int64, outputFile string) {
+func LinePlotGroup(column string, data map[string]int64, outputFile string) error {
 	keys, values := processDataLine(data)
 	line := charts.NewLine()
 	line.SetGlobalOptions(
@@ -130,5 +138,9 @@ func LinePlotGroup(column string, data map[string]int64, outputFile string) {
 	f, _ := os.Create(outputFile)
 	defer f.Close()
 	line.Render(f)
-	utility.OpenBrowser(outputFile)
+	err := utility.OpenBrowser(outputFile)
+	if err != nil {
+		return fmt.Errorf("can't open browser %v", err)
+	}
+	return nil
 }

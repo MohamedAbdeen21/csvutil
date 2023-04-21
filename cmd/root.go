@@ -9,8 +9,10 @@ import (
 
 const version = "0.0.4"
 
-var threads int
-var delimiter string
+var (
+	threads   int
+	delimiter string
+)
 
 // function instead of a var like all other commands for testing
 func RootCmd() *cobra.Command {

@@ -26,7 +26,12 @@ type Options struct {
 	Nulls       string
 }
 
-func setupMappers(filename string, thread_count int, delimiter string, nulls string) (mappers []*mapper.Mapper) {
+func setupMappers(
+	filename string,
+	thread_count int,
+	delimiter string,
+	nulls string,
+) (mappers []*mapper.Mapper, err error) {
 	threads := int64(thread_count)
 	file_size := utility.StatFile(filename)
 
@@ -35,12 +40,15 @@ func setupMappers(filename string, thread_count int, delimiter string, nulls str
 	var limit int64 = 0
 
 	for i := int64(0); i < threads; i++ {
-		limit = utility.AdjustLimit(filename, offset, chunk_size)
+		limit, err = utility.AdjustLimit(filename, offset, chunk_size)
+		if err != nil {
+			return nil, err
+		}
 		mappers = append(mappers, mapper.NewMapper(i, offset, limit, filename, delimiter, nulls))
 		offset += limit
 	}
 
-	return mappers
+	return mappers, nil
 }
 
 func setupFilters(filename string, filters map[string][]string) (map[int][]string, error) {
@@ -68,7 +76,10 @@ func Count(option *Options) (map[string]int64, error) {
 		}
 	}
 
-	mappers := setupMappers(option.Filename, option.Threads, option.Delimiter, option.Nulls)
+	mappers, err := setupMappers(option.Filename, option.Threads, option.Delimiter, option.Nulls)
+	if err != nil {
+		return nil, err
+	}
 
 	for _, mapper := range mappers {
 		if option.Group != "" {
@@ -77,7 +88,6 @@ func Count(option *Options) (map[string]int64, error) {
 	}
 
 	var mapper_headers map[int][]string
-	var err error
 	if len(option.Filters) != 0 {
 		mapper_headers, err = setupFilters(option.Filename, option.Filters)
 		if err != nil {
@@ -94,7 +104,7 @@ func Count(option *Options) (map[string]int64, error) {
 			RunCount(&wg)
 	}
 
-	return reducer.NewReducer().ReduceCount(mappers[:], option.Mode, &wg), nil
+	return reducer.NewReducer().ReduceCount(mappers, option.Mode, &wg), nil
 }
 
 func Stat(option *Options) (map[string]float64, error) {
@@ -105,7 +115,11 @@ func Stat(option *Options) (map[string]float64, error) {
 		return map[string]float64{}, fmt.Errorf("stat: column %s doesn't exist", option.Columns[0])
 	}
 
-	mappers := setupMappers(option.Filename, option.Threads, option.Delimiter, option.Nulls)
+	mappers, err := setupMappers(option.Filename, option.Threads, option.Delimiter, option.Nulls)
+	if err != nil {
+		return nil, err
+	}
+
 	channel := make(chan string)
 
 	mapper_headers := make(map[int][]string)
@@ -149,7 +163,11 @@ func Columns(option *Options) error {
 		}
 	}
 
-	mappers := setupMappers(option.Filename, option.Threads, option.Delimiter, option.Nulls)
+	mappers, err := setupMappers(option.Filename, option.Threads, option.Delimiter, option.Nulls)
+	if err != nil {
+		return err
+	}
+
 	channel := make(chan string)
 
 	var mapper_headers map[int][]string

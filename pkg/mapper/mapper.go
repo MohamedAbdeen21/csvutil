@@ -109,8 +109,8 @@ func (mapper *Mapper) RunCount(wg *sync.WaitGroup) {
 		if !ok {
 			break
 		}
-
 	}
+
 }
 
 func (mapper *Mapper) RunStat(wg *sync.WaitGroup) {

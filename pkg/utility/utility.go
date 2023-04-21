@@ -52,10 +52,10 @@ func MapHeaders(filename string) map[string]int {
 	return mapped_headers
 }
 
-func AdjustLimit(filename string, offset int64, chunk_size int64) (limit int64) {
+func AdjustLimit(filename string, offset int64, chunk_size int64) (limit int64, err error) {
 	fd, err := os.Open(filename)
 	if err != nil {
-		panic(fmt.Sprintf("can't open file %s", filename))
+		return 0, fmt.Errorf("unexpected error, can't open file %s", filename)
 	}
 	defer fd.Close()
 
@@ -63,7 +63,7 @@ func AdjustLimit(filename string, offset int64, chunk_size int64) (limit int64) 
 	reader := bufio.NewReader(fd)
 	line, _ := reader.ReadBytes('\n')
 	limit = chunk_size + int64(len(line))
-	return limit
+	return limit, nil
 }
 
 func StatFile(filename string) int64 {
