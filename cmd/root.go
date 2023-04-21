@@ -45,7 +45,7 @@ func RootCmd() *cobra.Command {
 	cmd.PersistentFlags().StringVarP(&delimiter, "delimiter", "d", ",", "Choose delimiter")
 	cmd.AddCommand(statCmd())
 	cmd.AddCommand(selectCmd())
-	cmd.AddCommand(countCmd(&map[string]int64{}))
+	cmd.AddCommand(countCmd(&map[string]int{}))
 	cmd.AddCommand(plotCmd())
 	return cmd
 }

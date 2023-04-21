@@ -1,7 +1,6 @@
 package reducer
 
 import (
-	"github.com/MohamedAbdeen21/csvutil/pkg/mapper"
 	"github.com/MohamedAbdeen21/csvutil/pkg/utility"
 	"io"
 	"math"
@@ -10,7 +9,8 @@ import (
 )
 
 type Reducer struct {
-	limit int
+	limit   int
+	channel chan map[string]string
 
 	// stat
 	required []string
@@ -21,14 +21,17 @@ type Reducer struct {
 	out io.Writer
 }
 
-func NewReducer() *Reducer {
-	return &Reducer{}
+func NewReducer(channel chan map[string]string) *Reducer {
+	return &Reducer{
+		channel: channel,
+	}
 }
 
-func NewStatReducer(required_stats []string) *Reducer {
+func NewStatReducer(channel chan map[string]string, required_stats []string) *Reducer {
 	reducer := &Reducer{
 		stats:    make(map[string]float64),
 		required: required_stats,
+		channel:  channel,
 	}
 	reducer.stats["min"] = math.MaxInt64
 	reducer.stats["max"] = math.MinInt64
@@ -36,36 +39,42 @@ func NewStatReducer(required_stats []string) *Reducer {
 	return reducer
 }
 
-func NewColumnsReducer(fd io.Writer, limit int) *Reducer {
+func NewColumnsReducer(channel chan map[string]string, fd io.Writer, limit int) *Reducer {
 	return &Reducer{
-		out:   fd,
-		limit: limit,
+		out:     fd,
+		limit:   limit,
+		channel: channel,
 	}
 }
 
-func (reducer *Reducer) ReduceCount(mappers []*mapper.Mapper, mode string, wg *sync.WaitGroup) map[string]int64 {
+func (reducer *Reducer) ReduceCount(mode string, wg *sync.WaitGroup) map[string]int {
 	wg.Wait()
-	var result map[string]int64 = make(map[string]int64)
-	switch mode {
-	case "lines":
-		for _, m := range mappers {
-			result["total"] += m.GetLinesCount()
+	close(reducer.channel)
+	var result map[string]int = make(map[string]int)
+	for {
+		data, more := <-reducer.channel
+		if !more {
+			break
 		}
-	case "bytes":
-		for _, m := range mappers {
-			result["total"] += m.GetBytesCount()
-		}
-	case "group":
-		for _, m := range mappers {
-			for key, value := range m.GetGroupCount() {
-				result[key] += value
+
+		switch mode {
+		case "lines":
+			value, _ := strconv.Atoi(data["lines"])
+			result["total"] += value
+		case "bytes":
+			value, _ := strconv.Atoi(data["bytes"])
+			result["total"] += value
+		case "group":
+			for key, value := range data {
+				v, _ := strconv.Atoi(value)
+				result[key] += v
 			}
 		}
 	}
 	return result
 }
 
-func (reducer *Reducer) ReduceStat(channel chan string, wg *sync.WaitGroup) map[string]float64 {
+func (reducer *Reducer) ReduceStat(wg *sync.WaitGroup) map[string]float64 {
 	waitCh := make(chan int)
 	go func(wg *sync.WaitGroup) {
 		wg.Wait()
@@ -85,12 +94,12 @@ func (reducer *Reducer) ReduceStat(channel chan string, wg *sync.WaitGroup) map[
 
 	for {
 		select {
-		case data := <-channel:
+		case data := <-reducer.channel:
 			var value float64
 			var err error
 			if is_numerical_column {
-				value, err = strconv.ParseFloat(data, 64)
-				if err != nil && data != "" {
+				value, err = strconv.ParseFloat(data[""], 64)
+				if err != nil && data[""] != "" {
 					is_numerical_column = false
 					// return nil, fmt.Errorf("value provided is not numeric: %s", data)
 				}
@@ -108,14 +117,14 @@ func (reducer *Reducer) ReduceStat(channel chan string, wg *sync.WaitGroup) map[
 				}
 			}
 
-			if data == "" {
+			if data[""] == "" {
 				reducer.stats["nulls"]++
 			} else {
 				reducer.stats["count"]++
 			}
 
 		case <-waitCh:
-			close(channel)
+			close(reducer.channel)
 			reducer.stats["mean"] = reducer.stats["sum"] / reducer.stats["count"]
 
 			// avoid calculating if not necessary to save space
@@ -135,7 +144,7 @@ func (reducer *Reducer) ReduceStat(channel chan string, wg *sync.WaitGroup) map[
 	}
 }
 
-func (reducer *Reducer) ReduceColumns(channel chan string, wg *sync.WaitGroup) {
+func (reducer *Reducer) ReduceColumns(channel chan map[string]string, wg *sync.WaitGroup) {
 	waitCh := make(chan int)
 	go func(wg *sync.WaitGroup) {
 		wg.Wait()
@@ -146,7 +155,8 @@ func (reducer *Reducer) ReduceColumns(channel chan string, wg *sync.WaitGroup) {
 		select {
 		case <-waitCh:
 			return
-		case line := <-channel:
+		case data := <-channel:
+			line := data[""]
 			if reducer.limit > 0 {
 				reducer.out.Write([]byte(line + "\n"))
 				reducer.limit--

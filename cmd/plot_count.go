@@ -9,7 +9,7 @@ import (
 )
 
 func plotCountCmd() *cobra.Command {
-	data := make(map[string]int64)
+	data := make(map[string]int)
 	cmd := countCmd(&data)
 	cmd.SetOut(io.Discard)
 	column, _ := cmd.Flags().GetString("group")

@@ -15,7 +15,7 @@ var group string
 var count_filters map[string]string
 var count_nulls string
 
-func countCmd(return_copy *map[string]int64) *cobra.Command {
+func countCmd(return_copy *map[string]int) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "count",
 		Short:   "Count the number of lines or bytes, or frequency of values in a column",

@@ -13,10 +13,10 @@ import (
 
 type tuple struct {
 	key   string
-	value int64
+	value int
 }
 
-func sortCountData(data map[string]int64) []tuple {
+func sortCountData(data map[string]int) []tuple {
 	size := len(data)
 	buffer := make([]tuple, size)
 	var index int
@@ -44,7 +44,7 @@ func sortCountData(data map[string]int64) []tuple {
 	return buffer
 }
 
-func processDataBar(data map[string]int64) ([]string, []opts.BarData) {
+func processDataBar(data map[string]int) ([]string, []opts.BarData) {
 	buffer := sortCountData(data)
 	size := len(buffer)
 	keys := make([]string, size)
@@ -56,7 +56,7 @@ func processDataBar(data map[string]int64) ([]string, []opts.BarData) {
 	return keys, values
 }
 
-func BarPlotGroup(column string, data map[string]int64, outputFile string) error {
+func BarPlotGroup(column string, data map[string]int, outputFile string) error {
 	keys, values := processDataBar(data)
 	bar := charts.NewBar()
 	bar.SetGlobalOptions(
@@ -79,7 +79,7 @@ func BarPlotGroup(column string, data map[string]int64, outputFile string) error
 	return nil
 }
 
-func processDataScatter(data map[string]int64) ([]string, []opts.ScatterData) {
+func processDataScatter(data map[string]int) ([]string, []opts.ScatterData) {
 	buffer := sortCountData(data)
 	size := len(buffer)
 	keys := make([]string, size)
@@ -91,7 +91,7 @@ func processDataScatter(data map[string]int64) ([]string, []opts.ScatterData) {
 	return keys, values
 }
 
-func ScatterPlotGroup(column string, data map[string]int64, outputFile string) error {
+func ScatterPlotGroup(column string, data map[string]int, outputFile string) error {
 	keys, values := processDataScatter(data)
 	scatter := charts.NewScatter()
 	scatter.SetGlobalOptions(
@@ -112,7 +112,7 @@ func ScatterPlotGroup(column string, data map[string]int64, outputFile string) e
 	return nil
 }
 
-func processDataLine(data map[string]int64) ([]string, []opts.LineData) {
+func processDataLine(data map[string]int) ([]string, []opts.LineData) {
 	buffer := sortCountData(data)
 	size := len(buffer)
 	keys := make([]string, size)
@@ -124,7 +124,7 @@ func processDataLine(data map[string]int64) ([]string, []opts.LineData) {
 	return keys, values
 }
 
-func LinePlotGroup(column string, data map[string]int64, outputFile string) error {
+func LinePlotGroup(column string, data map[string]int, outputFile string) error {
 	keys, values := processDataLine(data)
 	line := charts.NewLine()
 	line.SetGlobalOptions(

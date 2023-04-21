@@ -65,7 +65,7 @@ func setupFilters(filename string, filters map[string][]string) (map[int][]strin
 	return mapper_headers, nil
 }
 
-func Count(option *Options) (map[string]int64, error) {
+func Count(option *Options) (map[string]int, error) {
 	wg := sync.WaitGroup{}
 
 	mapped_headers := utility.MapHeaders(option.Filename)
@@ -95,16 +95,18 @@ func Count(option *Options) (map[string]int64, error) {
 		}
 	}
 
+	channel := make(chan map[string]string, len(mappers))
 	for _, mapper := range mappers {
 		wg.Add(1)
 		go mapper.
 			SetColumns(mapper_headers).
 			SetMode(option.Mode).
 			SetSkipHeaders(true).
+			SetChannel(channel).
 			RunCount(&wg)
 	}
 
-	return reducer.NewReducer().ReduceCount(mappers, option.Mode, &wg), nil
+	return reducer.NewReducer(channel).ReduceCount(option.Mode, &wg), nil
 }
 
 func Stat(option *Options) (map[string]float64, error) {
@@ -120,7 +122,7 @@ func Stat(option *Options) (map[string]float64, error) {
 		return nil, err
 	}
 
-	channel := make(chan string)
+	channel := make(chan map[string]string)
 
 	mapper_headers := make(map[int][]string)
 	for col_name, col_index := range mapped_headers {
@@ -138,7 +140,7 @@ func Stat(option *Options) (map[string]float64, error) {
 			RunStat(&wg)
 	}
 
-	return reducer.NewStatReducer(option.Stats).ReduceStat(channel, &wg), nil
+	return reducer.NewStatReducer(channel, option.Stats).ReduceStat(&wg), nil
 }
 
 func Columns(option *Options) error {
@@ -168,7 +170,7 @@ func Columns(option *Options) error {
 		return err
 	}
 
-	channel := make(chan string)
+	channel := make(chan map[string]string)
 
 	var mapper_headers map[int][]string
 	if len(option.Filters) != 0 {
@@ -186,6 +188,6 @@ func Columns(option *Options) error {
 			RunColumns(&wg)
 	}
 
-	reducer.NewColumnsReducer(option.Output, option.Limit).ReduceColumns(channel, &wg)
+	reducer.NewColumnsReducer(channel, option.Output, option.Limit).ReduceColumns(channel, &wg)
 	return nil
 }

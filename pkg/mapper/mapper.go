@@ -2,6 +2,7 @@ package mapper
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -19,7 +20,7 @@ type Mapper struct {
 	nulls     string
 
 	// stat
-	channel chan string
+	channel chan map[string]string
 
 	// count
 	mode        string
@@ -61,7 +62,7 @@ func (mapper *Mapper) SetMode(mode string) *Mapper {
 	return mapper
 }
 
-func (mapper *Mapper) SetChannel(channel chan string) *Mapper {
+func (mapper *Mapper) SetChannel(channel chan map[string]string) *Mapper {
 	mapper.channel = channel
 	return mapper
 }
@@ -111,6 +112,18 @@ func (mapper *Mapper) RunCount(wg *sync.WaitGroup) {
 		}
 	}
 
+	temp := make(map[string]string, len(mapper.group_count))
+	if mapper.mode == "group" {
+		for key, value := range mapper.group_count {
+			temp[key] = fmt.Sprintf("%d", value)
+		}
+		mapper.channel <- temp
+	} else {
+		temp["lines"] = fmt.Sprintf("%d", mapper.lines_count)
+		temp["bytes"] = fmt.Sprintf("%d", mapper.bytes_count)
+		mapper.channel <- temp
+	}
+
 }
 
 func (mapper *Mapper) RunStat(wg *sync.WaitGroup) {
@@ -129,7 +142,7 @@ func (mapper *Mapper) RunStat(wg *sync.WaitGroup) {
 			break
 		}
 
-		mapper.channel <- mapper.stat(string(line))
+		mapper.channel <- map[string]string{"": mapper.stat(string(line))}
 		if !ok {
 			break
 		}
@@ -156,7 +169,7 @@ func (mapper *Mapper) RunColumns(wg *sync.WaitGroup) {
 		data, isValid := mapper.selectColumns(string(line))
 		data = strings.Trim(data, "\n")
 		if isValid {
-			mapper.channel <- data
+			mapper.channel <- map[string]string{"": data}
 		}
 
 		if !ok {
